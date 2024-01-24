@@ -7,7 +7,6 @@ _exports.getProducts =  async (req, res, next) => {
     try
     {
         const [query, offset, limit, sort] = Product.parseQuery(req.query);
-        console.log(query, offset, limit, sort);
         const pipeline = [
             {
                 $lookup: {
