@@ -17,7 +17,7 @@ app.use(BodyParser.json());
 app.use(cookieParser());
 app.use(ExpressMongoSanitize());
 
-app.use('/api/products/', product_routes);
+app.use('/api/products', product_routes);
 
 app.get('*', (req, res, next) => {
     res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl));
