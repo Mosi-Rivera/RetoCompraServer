@@ -47,6 +47,7 @@ _exports.getProducts =  async (req, res, next) => {
                     color: {$first: '$color'},
                     thumbnail: {$first: '$thumbnail'},
                     price: {$first: '$price'},
+                    currency: {$first: '$currency'},
                     sku: {$first: '$sku'}
                 }
             },
