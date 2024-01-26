@@ -25,8 +25,7 @@ _exports.getProducts =  async (req, res, next) => {
 _exports.searchProducts = async (req, res, next) => {
     try
     {
-        const limit = Variant.parseLimit(req.query.limit);
-        const skip = Variant.parsePageToSkip(req.query.page, limit);
+        const [query, skip, limit, sort] = Variant.parseQuery(req.query);
         const search = req.params.search;
         const regex = { $regex: new RegExp(`.*${search}.*`, 'i') };
         const products = await Variant.find({
@@ -35,8 +34,9 @@ _exports.searchProducts = async (req, res, next) => {
                 {brand: regex},
                 {section: regex},
                 {color: regex}
-            ]
-        }).skip(skip).limit(limit).select({
+            ],
+            ...query
+        }).sort(sort || {}).skip(skip).limit(limit).select({
             _id: 1,
             product: 1,
             'assets.thumbnail': 1,
