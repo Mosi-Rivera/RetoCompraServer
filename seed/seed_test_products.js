@@ -38,42 +38,36 @@ const atoi = (str, def = 10) => {
         }
         const products = [];
         const variants = [];
-        let product_count = atoi(process.argv[2]);
-        let variant_count = atoi(process.argv[3]);
+        let product_count = atoi(process.argv[2], 10);
+        let variant_count = atoi(process.argv[3], 5);
         for (let i = product_count; i--;)
             products.push({
                 name: "Product name: " + i,
                 description: 'This is a description for product: ' + i,
-                sections: [sections[i % sections.length]],
+                section: sections[i % sections.length],
                 brand: brands[i % brands.length]
             });
-        const product_ids = (await Product.insertMany(products)).map(doc => doc._id);
-        for (let i = product_ids.length; i--;)
+        const product_documents = await Product.insertMany(products);
+        for (let i = product_documents.length; i--;)
         {
-            const color_size_map = new Map();
+            const {_id, name, brand, section} = product_documents[i];
             for (let j = variant_count; j--;)
             {
                 const color_index = j % colors.length;
                 const color = colors[color_index];
                 const img = images[color_index];
                 const price = Math.floor((5 + Math.random() * 40) * 100) / 100;
-                const size = sizes[j % sizes.length];
-                const quantity = Math.floor(Math.random() * 30 + 1)
-                if (color_size_map.has(color))
-                {
-                    const size_log = color_size_map.get(color);
-                    if (size_log.includes(size))
-                        continue;
-                    else
-                    {
-                        size_log.push(size);
-                        color_size_map.set(color, size_log);
-                    }
-                }
-                else
-                    color_size_map.set(color, [size]);
+                const variant_sizes = [];
+                for (let k = 0, kl = sizes.length; k < kl; k++)
+                    variant_sizes.push({
+                        size: sizes[k],
+                        stock: Math.floor(Math.random() * 30 + 1)
+                    });
                 variants.push({
-                    product: product_ids[i],
+                    product: _id,
+                    name,
+                    brand,
+                    section,
                     color,
                     assets: {
                         thumbnail: img,
@@ -83,8 +77,7 @@ const atoi = (str, def = 10) => {
                         currency: USD,
                         value: price
                     },
-                    size,
-                    quantity
+                    sizes: variant_sizes
                 });
             }
         }
