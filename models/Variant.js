@@ -53,7 +53,7 @@ VariantSchema.statics.priceFilterToQuery = (min_price, max_price) => {
 		return {'price.value': {$gte: min_price}};
 	else if (max_price !== null)
 		return {'price.value': {$lte: max_price}};
-	return false;
+	return {};
 }
 VariantSchema.statics.parseLimit = (limit) => {
     limit = parseInt(limit);
@@ -67,21 +67,36 @@ VariantSchema.statics.parsePageToSkip = (page, limit) => {
     return (page - 1) * limit;
 }
 
+VariantSchema.statics.parseSizeQuery = (size) => {
+	if (sizes_constants.arr.includes(size))
+	{
+		return {
+			sizes: {
+				$elemMatch: {
+					size: size,
+					stock: {$gt: 0}
+				}
+			}
+		};
+	}
+	else
+		return {};
+}
+
 VariantSchema.statics.parseQuery = function(query)
 {
 	let limit = this.parseLimit(query.limit);
 	let skip = this.parsePageToSkip(query.page, limit);
 	let sort = this.parseSort(query.sort);
 	let price_query = this.priceFilterToQuery(query.min_price, query.max_price);
-    let size = query.size;
+    let size_query = this.parseSizeQuery(query.size);
     delete query.size;
 	delete query.limit;
 	delete query.page;
 	delete query.sort;
 	delete query.min_price;
 	delete query.max_price;
-	if (price_query) query = {...query, ...price_query};
-    if (size) query.size = {'sizes.size': 'size'};
+	query = {...query, ...price_query, ...size_query};
 	return [query,  skip, limit, sort];
 }
 
