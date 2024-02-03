@@ -1,4 +1,3 @@
-const Product = require("../models/Product");
 const Variant = require("../models/Variant");
 
 const _exports = {};
@@ -6,66 +5,53 @@ const _exports = {};
 _exports.getProducts =  async (req, res, next) => {
     try
     {
-        const [query, offset, limit, sort] = Product.parseQuery(req.query);
-        const pipeline = [
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'product',
-                    foreignField: '_id',
-                    as: 'product'
-                }
-            },
-            {
-                $unwind: '$product'
-            },
-            {
-                $project: {
-                    _id: 0,
-                    sku: '$_id',
-                    product_id: '$product._id',
-                    price: '$price.value',
-                    currency: '$price.currency',
-                    brand: '$product.brand',
-                    sections: '$product.sections',
-                    name: '$product.name',
-                    color: '$color',
-                    thumbnail: '$assets.thumbnail'
-                }
-            },
-            {
-                $match: query
-            },
-            {
-                $group: {
-                    _id: {
-                        color: '$color',
-                        product_id: '$product_id'
-                    },
-                    name: {$first: '$name'},
-                    brand: {$first: '$brand'},
-                    color: {$first: '$color'},
-                    thumbnail: {$first: '$thumbnail'},
-                    price: {$first: '$price'},
-                    sku: {$first: '$sku'}
-                }
-            },
-            {
-                $project: {_id: 0}
-            }
-        ];
-        if (sort) pipeline.push({$sort: sort});
-        pipeline.push(
-            {
-                $skip: offset
-            },
-            {
-                $limit: limit
-            },
+        const [query, skip, limit, sort] = Variant.parseQuery(req.query);
+        const [products, count] = await Promise.all([
+            Variant.find(query).sort(sort || {}).skip(skip).limit(limit).select({
+                _id: 1,
+                product: 1,
+                'assets.thumbnail': 1,
+                name: 1,
+                brand: 1,
+                price: 1
+            }),
+            Variant.countDocuments(query)
+        ]);
+        res.status(200).json({products, pages: Math.ceil(count / limit)});
+    }
+    catch(err)
+    {
+        res.sendStatus(500) && next(err);
+    }
+}
 
-        )
-        const products = await Variant.aggregate(pipeline);
-        res.status(200).json(products);
+_exports.searchProducts = async (req, res, next) => {
+    try
+    {
+        const [query, skip, limit, sort] = Variant.parseQuery(req.query);
+        const search = req.params.search;
+        const regex = { $regex: new RegExp(`.*${search}.*`, 'i') };
+        const [products, count] = await Promise.all([
+            Variant.find({
+                $or: [
+                    {name: regex},
+                    {brand: regex},
+                    {section: regex},
+                    {color: regex}
+                ],
+                ...query
+            }).sort(sort || {}).skip(skip).limit(limit).select({
+                _id: 1,
+                product: 1,
+                'assets.thumbnail': 1,
+                name: 1,
+                brand: 1,
+                price: 1,
+                color: 1
+            }),
+            Variant.countDocuments(query)
+        ]);
+        res.status(200).json({products, pages: Math.ceil(count / limit)});
     }
     catch(err)
     {
