@@ -89,7 +89,7 @@ app.post("/login", async (req, res) => {
 
 function generateAccessToken(userEmail) {
     //creates a access tokent that takes the usermail and expiresIn value, this function is called inside the /signin post route
-    return jwt.sign({ userEmail }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "5m" })
+    return jwt.sign({ userEmail }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" })
 
 }
 
