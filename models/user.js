@@ -5,9 +5,10 @@ const UserSchema = new mongoose.Schema({
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
+    role: { type: String, enum: ["Customer", "Staff", "Admin"], required: true },
     refresh_tokens: [{
-        token:{type: String, required: true},
-        expiration:{type: Date, required: true},
+        token: { type: String, required: true },
+        expiration: { type: Date, required: true },
     }]
 })
 
