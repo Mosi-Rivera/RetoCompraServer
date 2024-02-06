@@ -9,11 +9,14 @@ require('dotenv').config();
 const app = express();
 const auth_routes = require('./routes/auth_route')
 
-if (!process.env.NODE_ENV) app.use(cors());
+if (!process.env.NODE_ENV) app.use(cors({
+    credentials: true,
+    origin: "http://localhost:5173"
+}));
 
 mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017');
 
-app.use(BodyParser.urlencoded({extended: false}));
+app.use(BodyParser.urlencoded({ extended: false }));
 app.use(BodyParser.json());
 app.use(cookieParser());
 app.use(ExpressMongoSanitize());
@@ -32,5 +35,5 @@ app.get("*", (req, res) => {
 });
 const port = 4800
 app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server is running on http://localhost:${port}`);
 });
