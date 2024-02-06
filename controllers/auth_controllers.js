@@ -34,7 +34,6 @@ module.exports.registerController = async (req, res) => {
             password: hashedPassword
         });
         const user = await newUser.save();
-        console.log(process.env.secretKey);
         const token = jwt.sign({userEmail: user.email}, process.env.ACCESS_TOKEN_SECRET, { 
             expiresIn: '15m'
         });
@@ -48,7 +47,6 @@ module.exports.registerController = async (req, res) => {
         )})
         await user.save()
 
-        console.log(req.body);
         res.status(200).json({
             user: {
                 firstName: user.firstName,
@@ -65,7 +63,7 @@ module.exports.registerController = async (req, res) => {
     }
 }
 
-modules.exports.loginController = async (req, res) => {
+module.exports.loginController = async (req, res) => {
     try {
         const { email, password } = req.body
 
