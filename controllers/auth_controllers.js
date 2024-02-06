@@ -5,6 +5,8 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const _exports = {}
 const schema = new passwordValidator();
+const { generateAccessToken } = require('../utils/jwt');
+
 
 
 schema
@@ -59,50 +61,46 @@ _exports.registerController = async (req, res) => {
 _exports.loginController = async (req, res) => {
     try {
         const { email, password } = req.body
-        let user = await User.findOne({ email })
 
         if (!password || !email) {
-            res.send({ message: "Invalid Credentials" })
+            return res.status(500).json({ message: "Invalid Credentials" })
         }
-
+        let user = await User.findOne({ email })
         if (!user) {
-            res.send({ error: "Invalid Credentials" });
+            return res.status(500).json({ error: "Invalid Credentials" });
         }
         const validPassword = await bcrypt.compare(password, user.password)
 
-        if (validPassword) {
-            const accessToken = generateAccessToken(email)
-            res.cookie("token", accessToken, {
-                httpOnly: true,
-                maxAge: 1000 * 60 * 60 * 24,
-                secure: false,
-                signed: false
-            })
-
-            const refreshToken = jwt.sign(email, process.env.REFRESH_TOKEN_SECRET)
-            res.cookie("refreshToken", refreshToken, {
-                httpOnly: true,
-                maxAge: 1000 * 60 * 60 * 24,
-                secure: false,
-                signed: false
-            })
-
-            user.refresh_tokens.push({
-                token: refreshToken,
-                expiration: new Date(Date.now() + 1000 * 60 * 60 * 24)
-            });
-
-            res.status(200).json({
-                msg: `Welcome ${user.firstName} ${user.lastName}`
-            })
+        if (!validPassword) {
+            return res.status(500).json({ error: "Invalid Credentials" });
         }
-    } catch (error) {
-        res.send({ error: "Invalid Credentials " + error })
-    }
-}
+        const accessToken = generateAccessToken(email)
+        res.cookie("token", accessToken, {
+            httpOnly: true,
+            maxAge: 1000 * 60 * 60 * 24,
+            secure: false,
+            signed: false
+        })
 
-function generateAccessToken(userEmail) {
-    return jwt.sign({ userEmail }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" })
+        const refreshToken = jwt.sign(email, process.env.REFRESH_TOKEN_SECRET)
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            maxAge: 1000 * 60 * 60 * 24,
+            secure: false,
+            signed: false
+        })
+
+        user.refreshTokens.push({
+            token: refreshToken,
+            expiration: new Date(Date.now() + 1000 * 60 * 60 * 24)
+        });
+
+        res.status(200).json({
+            msg: `Welcome ${user.firstName} ${user.lastName}`
+        })
+    } catch (error) {
+        res.status(500).json({ error: "Invalid Credentials " + error })
+    }
 }
 
 module.exports = _exports

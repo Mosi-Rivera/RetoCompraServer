@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
     role: { type: String, enum: ["Customer", "Staff", "Admin"], required: true },
-    refresh_tokens: [{
+    refreshTokens: [{
         token: { type: String, required: true },
         expiration: { type: Date, required: true },
     }]
