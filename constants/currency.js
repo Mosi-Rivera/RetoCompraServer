@@ -1,8 +1,5 @@
 const obj = {
-    NEW: 'new',
-    POPULAR: 'popular',
-    LOW: 'low',
-    HIGH: 'high'
+    USD: "usd"
 };
 const arr = Object.values(obj);
 module.exports.obj = obj;
