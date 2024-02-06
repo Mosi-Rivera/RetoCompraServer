@@ -3,18 +3,17 @@ const emailValidator = require('email-validator')
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const _exports = {}
 const schema = new passwordValidator();
 
 
 schema
-.is().min(5)                                    // Minimum length 8
-.is().max(100)                                  // Maximum length 100
-.has().uppercase()                              // Must have uppercase letters
-.has().lowercase()                              // Must have lowercase letters
-.has().digits()                                //  any  digits allow 
+.is().min(5)
+.is().max(100)
+.has().uppercase()
+.has().lowercase()
+.has().digits()
 
-_exports.registerController = async (req, res) => {
+module.exports.registerController = async (req, res) => {
     try
     {
         const body = req.body;
@@ -27,22 +26,23 @@ _exports.registerController = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10)
        
-        const new_user = new User({
+        const newUser = new User({
             firstName,
             lastName,
             email,  
             password: hashedPassword
         });
-        const user = await new_user.save();
-        const token = jwt.sign({userEmail: user.email}, process.env.secretKey, { 
+        const user = await newUser.save();
+        console.log(process.env.secretKey);
+        const token = jwt.sign({userEmail: user.email}, process.env.ACCESS_TOKEN_SECRET, { 
             expiresIn: '15m'
         });
-        const refreshToken = jwt.sign({userEmail: user.email}, process.env.secretKey, { 
+        const refreshToken = jwt.sign({userEmail: user.email}, process.env.REFRESH_TOKEN_SECRET, { 
             expiresIn: '24h'
         });
         res.cookie('token',token,{httpOnly:true,maxAge:1000*60*15})
         res.cookie('refreshToken',refreshToken,{httpOnly:true,maxAge:1000*60*60*24})
-        user.refresh_tokens.push({token:refreshToken,expiration: new Date(
+        user.refreshTokens.push({token:refreshToken,expiration: new Date(
             Date.now() + 1000*60*60*24
         )})
         await user.save()
@@ -56,4 +56,3 @@ _exports.registerController = async (req, res) => {
         res.sendStatus(500);
     }
 }
-module.exports = _exports

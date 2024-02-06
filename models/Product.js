@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
-const sections_constants = require('../constants/SECTIONS');
+const sectionsConstants = require('../constants/section');
 const ProductSchema = new mongoose.Schema({
 	name: {type: String, required: true},
 	description: {type: String, required: true},
 	section: {
 		type: String,
-		enum: sections_constants.arr,
-		default: sections_constants.obj.MEN
+		enum: sectionsConstants.arr,
+		default: sectionsConstants.obj.MEN
 	},
 	brand: {type: String, required: true}
 },

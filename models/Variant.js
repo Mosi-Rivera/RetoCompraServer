@@ -1,23 +1,23 @@
 const mongoose = require('mongoose');
-const sizes_constants = require('../constants/SIZES');
-const currency_constants = require('../constants/CURRENCIES');
-const Product = require('./Product');
-const {NEW, HIGH, LOW, POPULAR} = require('../constants/SORT').obj;
+const sizesConstants = require('../constants/size');
+const currencyConstants = require('../constants/currency');
+const Product = require('./product');
+const {NEW, HIGH, LOW, POPULAR} = require('../constants/sort').obj;
 const VariantSchema = new mongoose.Schema({
     sizes: [{
-        size: {type: String, required: true, enum: sizes_constants.arr},
+        size: {type: String, required: true, enum: sizesConstants.arr},
         stock: {type: Number, required: true, min: [0, 'Quantity cannot be less than zero'], default: 0}
     }],
     color: {type: String, required: true},
     price: {
-        currency: {type: String, enum: currency_constants.arr, default: currency_constants.obj.USD},
+        currency: {type: String, enum: currencyConstants.arr, default: currencyConstants.obj.USD},
         value: {type: Number, min: [0.01, "Price value must be greater than zero."], required: true}
     },
     assets: {
         thumbnail: {type: String, required: true},
         images: [String]
     },
-    popularity_index: {type: Number, default: 0},
+    popularityIndex: {type: Number, default: 0},
     product: {type: mongoose.Types.ObjectId, required: true, ref: Product},
     //duplicated fields
     name: {type: String, required: true},
@@ -28,13 +28,13 @@ const VariantSchema = new mongoose.Schema({
     timestamps: true
 });
 
-VariantSchema.index({brand: 1, size: 1, color: 1, section: 1, 'price.value': 1, popularity_index: 1});
+VariantSchema.index({brand: 1, size: 1, color: 1, section: 1, 'price.value': 1, popularityIndex: 1});
 
 VariantSchema.statics.parseSort = (sort) => {
 	switch (sort)
 	{
 		case NEW: sort = {createdAt: -1}; break;
-		case POPULAR: sort = {popularity_index: -1}; break;
+		case POPULAR: sort = {popularityIndex: -1}; break;
 		case LOW: sort = {price: 1}; break;
 		case HIGH: sort = {price: -1}; break;
 		default: sort = null;
@@ -42,17 +42,17 @@ VariantSchema.statics.parseSort = (sort) => {
 	return sort;
 }
 
-VariantSchema.statics.priceFilterToQuery = (min_price, max_price) => {
-	min_price = parseInt(min_price);
-	min_price = isNaN(min_price) ? null : min_price;
-	max_price = parseInt(max_price);
-	max_price = isNaN(max_price) ? null : max_price;
-	if (min_price !== null && max_price !== null)
-		return {$and: [{'price.value': {$gte: min_price}}, {'price.value': {$lte: max_price}}]};
-	else if (min_price !== null)
-		return {'price.value': {$gte: min_price}};
-	else if (max_price !== null)
-		return {'price.value': {$lte: max_price}};
+VariantSchema.statics.priceFilterToQuery = (minPrice, maxPrice) => {
+	minPrice = parseInt(minPrice);
+	minPrice = isNaN(minPrice) ? null : minPrice;
+	maxPrice = parseInt(maxPrice);
+	maxPrice = isNaN(maxPrice) ? null : maxPrice;
+	if (minPrice !== null && maxPrice !== null)
+		return {$and: [{'price.value': {$gte: minPrice}}, {'price.value': {$lte: maxPrice}}]};
+	else if (minPrice !== null)
+		return {'price.value': {$gte: minPrice}};
+	else if (maxPrice !== null)
+		return {'price.value': {$lte: maxPrice}};
 	return {};
 }
 VariantSchema.statics.parseLimit = (limit) => {
@@ -68,7 +68,7 @@ VariantSchema.statics.parsePageToSkip = (page, limit) => {
 }
 
 VariantSchema.statics.parseSizeQuery = (size) => {
-	if (sizes_constants.arr.includes(size))
+	if (sizesConstants.arr.includes(size))
 	{
 		return {
 			sizes: {
@@ -88,15 +88,15 @@ VariantSchema.statics.parseQuery = function(query)
 	let limit = this.parseLimit(query.limit);
 	let skip = this.parsePageToSkip(query.page, limit);
 	let sort = this.parseSort(query.sort);
-	let price_query = this.priceFilterToQuery(query.min_price, query.max_price);
-    let size_query = this.parseSizeQuery(query.size);
+	let priceQuery = this.priceFilterToQuery(query.minPrice, query.maxPrice);
+    let sizeQuery = this.parseSizeQuery(query.size);
     delete query.size;
 	delete query.limit;
 	delete query.page;
 	delete query.sort;
-	delete query.min_price;
-	delete query.max_price;
-	query = {...query, ...price_query, ...size_query};
+	delete query.minPrice;
+	delete query.maxPrice;
+	query = {...query, ...priceQuery, ...sizeQuery};
 	return [query,  skip, limit, sort];
 }
 
