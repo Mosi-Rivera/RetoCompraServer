@@ -1,8 +1,6 @@
 const obj = {
-    NEW: 'new',
-    POPULAR: 'popular',
-    LOW: 'low',
-    HIGH: 'high'
+    MEN: "men",
+    WOMEN: "women"
 };
 const arr = Object.values(obj);
 module.exports.obj = obj;
