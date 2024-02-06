@@ -1,10 +1,10 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Product = require('../models/Product');
-const Variant = require('../models/Variant');
-const {USD} = require('../constants/CURRENCIES').obj;
-const sections = require('../constants/SECTIONS').arr;
-const sizes = require('../constants/SIZES').arr;
+const Product = require('../models/product');
+const Variant = require('../models/variant');
+const {USD} = require('../constants/currency').obj;
+const sections = require('../constants/section').arr;
+const sizes = require('../constants/size').arr;
 const brands = ["NIKE", "H&M", "GC", "ADIDAS"];
 const colors = ["RED", "BLUE", "YELLOW", "GREEN", "PURPLE", "PINK", "BROWN", "BLACK", "WHITE", "MULTI"];
 const images = [
@@ -38,28 +38,28 @@ const atoi = (str, def = 10) => {
         }
         const products = [];
         const variants = [];
-        let product_count = atoi(process.argv[2], 10);
-        let variant_count = atoi(process.argv[3], 5);
-        for (let i = product_count; i--;)
+        let productCount = atoi(process.argv[2], 10);
+        let variantCount = atoi(process.argv[3], 5);
+        for (let i = productCount; i--;)
             products.push({
                 name: "Product name: " + i,
                 description: 'This is a description for product: ' + i,
                 section: sections[i % sections.length],
                 brand: brands[i % brands.length]
             });
-        const product_documents = await Product.insertMany(products);
-        for (let i = product_documents.length; i--;)
+        const productDocuments = await Product.insertMany(products);
+        for (let i = productDocuments.length; i--;)
         {
-            const {_id, name, brand, section} = product_documents[i];
-            for (let j = variant_count; j--;)
+            const {_id, name, brand, section} = productDocuments[i];
+            for (let j = variantCount; j--;)
             {
-                const color_index = j % colors.length;
-                const color = colors[color_index];
-                const img = images[color_index];
+                const colorIndex = j % colors.length;
+                const color = colors[colorIndex];
+                const img = images[colorIndex];
                 const price = Math.floor((5 + Math.random() * 40) * 100) / 100;
-                const variant_sizes = [];
+                const variantSizes = [];
                 for (let k = 0, kl = sizes.length; k < kl; k++)
-                    variant_sizes.push({
+                    variantSizes.push({
                         size: sizes[k],
                         stock: Math.floor(Math.random() * 30 + 1)
                     });
@@ -77,7 +77,7 @@ const atoi = (str, def = 10) => {
                         currency: USD,
                         value: price
                     },
-                    sizes: variant_sizes
+                    sizes: variantSizes
                 });
             }
         }
