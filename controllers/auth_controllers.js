@@ -3,21 +3,21 @@ const emailValidator = require('email-validator')
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const _exports = {}
 const schema = new passwordValidator();
 const { generateAccessToken } = require('../utils/jwt');
 
 
 
 schema
-    .is().min(5)                                    // Minimum length 8
-    .is().max(100)                                  // Maximum length 100
-    .has().uppercase()                              // Must have uppercase letters
-    .has().lowercase()                              // Must have lowercase letters
-    .has().digits()                                //  any  digits allow 
+.is().min(5)
+.is().max(100)
+.has().uppercase()
+.has().lowercase()
+.has().digits()
 
-_exports.registerController = async (req, res) => {
-    try {
+module.exports.registerController = async (req, res) => {
+    try
+    {
         const body = req.body;
         const email = body.email;
         const password = body.password;
@@ -26,31 +26,36 @@ _exports.registerController = async (req, res) => {
         if (!schema.validate(password) || !emailValidator.validate(email)) { return res.sendStatus(500) }
 
         const hashedPassword = await bcrypt.hash(password, 10)
-
-        const new_user = new User({
+       
+        const newUser = new User({
             firstName,
             lastName,
             email,
             password: hashedPassword
         });
-        const user = await new_user.save();
-        const token = jwt.sign({ userEmail: user.email }, process.env.secretKey, {
+        const user = await newUser.save();
+        const token = jwt.sign({userEmail: user.email}, process.env.ACCESS_TOKEN_SECRET, { 
             expiresIn: '15m'
         });
-        const refreshToken = jwt.sign({ userEmail: user.email }, process.env.secretKey, {
+        const refreshToken = jwt.sign({userEmail: user.email}, process.env.REFRESH_TOKEN_SECRET, { 
             expiresIn: '24h'
         });
-        res.cookie('token', token, { httpOnly: true, maxAge: 1000 * 60 * 15 })
-        res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 })
-        user.refresh_tokens.push({
-            token: refreshToken, expiration: new Date(
-                Date.now() + 1000 * 60 * 60 * 24
-            )
-        })
+        res.cookie('token',token,{httpOnly: true, maxAge: 1000 * 60 * 15})
+        res.cookie('refreshToken',refreshToken,{httpOnly: true, maxAge: 1000 * 60 * 60 * 24})
+        user.refreshTokens.push({token:refreshToken,expiration: new Date(
+            Date.now() + 1000*60*60*24
+        )})
         await user.save()
 
-        console.log(req.body);
-        res.status(200).json(user);
+        res.status(200).json({
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.lastName,
+                role: user.role,
+                _id: user._id
+            }
+        });
     }
     catch (err) {
         console.log(err);
@@ -58,7 +63,7 @@ _exports.registerController = async (req, res) => {
     }
 }
 
-_exports.loginController = async (req, res) => {
+module.exports.loginController = async (req, res) => {
     try {
         const { email, password } = req.body
 
@@ -96,11 +101,15 @@ _exports.loginController = async (req, res) => {
         });
 
         res.status(200).json({
-            msg: `Welcome ${user.firstName} ${user.lastName}`
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: user.role,
+                _id: user._id
+            }
         })
     } catch (error) {
         res.status(500).json({ error: "Invalid Credentials " + error })
     }
 }
-
-module.exports = _exports

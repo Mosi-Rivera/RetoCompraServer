@@ -6,5 +6,5 @@ const obj = {
     XL: 'XL'
 };
 const arr = Object.values(obj);
-const sizes_constants = {obj, arr};
-module.exports = sizes_constants;
+module.exports.obj = obj;
+module.exports.arr = arr;

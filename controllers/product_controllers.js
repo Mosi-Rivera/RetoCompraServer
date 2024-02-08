@@ -1,8 +1,6 @@
-const Variant = require("../models/Variant");
+const Variant = require("../models/variant");
 
-const _exports = {};
-
-_exports.getProducts =  async (req, res, next) => {
+module.exports.getProducts =  async (req, res, next) => {
     try
     {
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
@@ -25,7 +23,7 @@ _exports.getProducts =  async (req, res, next) => {
     }
 }
 
-_exports.searchProducts = async (req, res, next) => {
+module.exports.searchProducts = async (req, res, next) => {
     try
     {
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
@@ -58,5 +56,3 @@ _exports.searchProducts = async (req, res, next) => {
         res.sendStatus(500) && next(err);
     }
 }
-
-module.exports = _exports;
