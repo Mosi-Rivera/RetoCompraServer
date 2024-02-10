@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const sizesConstants = require('../constants/size');
 const currencyConstants = require('../constants/currency');
-const Product = require('./product');
+const Product = require('./Product');
 const {NEW, HIGH, LOW, POPULAR} = require('../constants/sort').obj;
 const VariantSchema = new mongoose.Schema({
     sizes: [{
