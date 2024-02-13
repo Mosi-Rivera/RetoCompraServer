@@ -1,4 +1,4 @@
-const Variant = require("../models/variant");
+const Variant = require("../models/Variant");
 
 module.exports.getProducts =  async (req, res, next) => {
     try
