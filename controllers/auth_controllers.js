@@ -87,7 +87,7 @@ module.exports.loginController = async (req, res) => {
             signed: false
         })
 
-        const refreshToken = jwt.sign(email, process.env.REFRESH_TOKEN_SECRET)
+        const refreshToken = jwt.sign({userEmail: email}, process.env.REFRESH_TOKEN_SECRET)
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24,
@@ -111,5 +111,26 @@ module.exports.loginController = async (req, res) => {
         })
     } catch (error) {
         res.status(500).json({ error: "Invalid Credentials " + error })
+    }
+}
+
+module.exports.whoAmIController = async (req, res, next) => {
+    try {
+        const email = res.locals.email;
+        const user = await User.findOne({email});
+        console.log(email) 
+        if (!user) {
+            throw new Error("Err: User not found!");
+        }
+        res.status(200).json({
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        res.sendStatus(500) && next(error);
     }
 }
