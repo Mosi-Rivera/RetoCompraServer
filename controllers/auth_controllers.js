@@ -116,7 +116,7 @@ module.exports.loginController = async (req, res) => {
 
 module.exports.whoAmIController = async (req, res, next) => {
     try {
-        const email = res.locals.email;
+        const email = req.email;
         const user = await User.findOne({email});
         console.log(email) 
         if (!user) {
