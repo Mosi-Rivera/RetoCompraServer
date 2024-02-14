@@ -67,6 +67,7 @@ module.exports.registerController = async (req, res) => {
 module.exports.loginController = async (req, res) => {
     try {
         const { email, password } = req.body
+        const oldRefreshToken = req.body.refreshToken;
 
         if (!password || !email) {
             return res.status(500).json({ message: "Invalid Credentials" })
@@ -99,12 +100,13 @@ module.exports.loginController = async (req, res) => {
         })
 
         const expirationDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
+        if (oldRefreshToken)
+            user.refreshTokens = user.refreshTokens.filter(({token}) => token !== oldRefreshToken);
         user.refreshTokens.push({
             token: refreshToken,
             expiration: expirationDate
         });
-
-        const updateUser = await User.findOneAndUpdate({ email, refreshTokens: { "token": refreshToken, "expiration": expirationDate }, new: true })
+        user.save();
 
 
         res.status(200).json({
@@ -147,8 +149,9 @@ module.exports.logoutController = async (req, res, next) => {
         const refreshToken = req.cookies.refreshToken;
         res.clearCookie("token", {httpOnly: true});
         if (refreshToken) {
-            const {userEmail} = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-            await User.findOneAndUpdate({email: userEmail}, {$pull: {refreshTokens: {token: refreshToken}}});
+            const {email} = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+            console.log(email);
+            await User.findOneAndUpdate({email}, {$pull: {refreshTokens: {token: refreshToken}}});
             res.clearCookie("refreshToken", {httpOnly: true});
         } 
         res.sendStatus(200);
