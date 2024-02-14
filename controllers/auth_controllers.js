@@ -134,3 +134,18 @@ module.exports.whoAmIController = async (req, res, next) => {
         res.sendStatus(500) && next(error);
     }
 }
+
+module.exports.logoutController = async (req, res, next) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        res.clearCookie("token", {httpOnly: true});
+        if (refreshToken) {
+            const {userEmail} = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+            await User.findOneAndUpdate({email: userEmail}, {$pull: {refreshTokens: {token: refreshToken}}});
+            res.clearCookie("refreshToken", {httpOnly: true});
+        } 
+        res.sendStatus(200);
+    } catch (error) {
+        res.sendStatus(500) && next(err);
+    }
+}
