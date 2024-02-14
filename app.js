@@ -14,7 +14,7 @@ if (!process.env.NODE_ENV) app.use(cors({
     origin: "http://localhost:5173"
 }));
 
-mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017');
+mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017/clothingStore');
 
 app.use(BodyParser.urlencoded({ extended: false }));
 app.use(BodyParser.json());
