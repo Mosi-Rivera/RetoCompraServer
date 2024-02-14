@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Product = require('../models/product');
-const Variant = require('../models/variant');
+const Product = require('../models/Product');
+const Variant = require('../models/Variant');
 const {USD} = require('../constants/currency').obj;
 const sections = require('../constants/section').arr;
 const sizes = require('../constants/size').arr;
