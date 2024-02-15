@@ -1,8 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require("../models/user")
-const { generateAccessToken, generateRefreshToken } = require("../utils/jwt")
-
-
+const { generateAccessToken, generateRefreshToken, accessTokenLifetime, refreshTokenLifetime } = require("../utils/jwt")
 
 module.exports.authenticateToken = async (req, res, next) => {
     const { token, refreshToken } = req.cookies;
@@ -10,10 +8,8 @@ module.exports.authenticateToken = async (req, res, next) => {
         if (!token) {
             throw new Error("No token provided.");
         }
-        const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        const userEmail = payload.email;
-        console.log(userEmail);
-        req.email = userEmail;
+        const {email} = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        req.email = email;
         return next();
     } catch (error) {
         try {
@@ -21,36 +17,26 @@ module.exports.authenticateToken = async (req, res, next) => {
                 throw new Error("Err: No refresh token provided.");
             }
             const { email } = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-            console.log(email);
+
             const user = await User.findOne({ email, "refreshTokens.token": refreshToken });
+
             if (!user) {
                 throw new Error("invalid refresh token")
             }
             const payload = user.email;
 
-            // we might use it this way to pass the role as well in the future
-            // const payload = {
-            //     "email": user.email
-            // }
             const newAccessToken = generateAccessToken(payload)
-            console.log(`new access token: ${newAccessToken}`)
             const newRefreshToken = generateRefreshToken(payload)
-            console.log(`new access token: ${newRefreshToken}`)
 
 
             res.cookie("token", newAccessToken, {
                 httpOnly: true,
-                maxAge: 1000 * 60 * 60 * 24,
-                secure: false,
-                signed: false
-            })
-
+                maxAge: accessTokenLifetime,
+            });
             res.cookie("refreshToken", newRefreshToken, {
                 httpOnly: true,
-                maxAge: 1000 * 60 * 60 * 24,
-                secure: false,
-                signed: false
-            })
+                maxAge: refreshTokenLifetime,
+            });
 
             const expirationDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
             user.refreshTokens = user.refreshTokens.filter(({token}) => token !== refreshToken);
@@ -59,8 +45,7 @@ module.exports.authenticateToken = async (req, res, next) => {
             req.email = email;
             return next();
         } catch (error) {
-            console.log(error)
             res.sendStatus(401) && next(error);
         }
     }
-}
+};
