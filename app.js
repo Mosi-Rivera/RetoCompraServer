@@ -14,7 +14,9 @@ if (!process.env.NODE_ENV) app.use(cors({
     origin: "http://localhost:5173"
 }));
 
-mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017/clothingStore');
+//Databse setup
+require('./config/db');
+
 
 app.use(BodyParser.urlencoded({ extended: false }));
 app.use(BodyParser.json());
@@ -28,11 +30,6 @@ app.get('*', (req, res, next) => {
     res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl));
 });
 
-app.get("*", (req, res) => {
-    res.status(200).json({
-        message: 'User registered successfully'
-    });
-});
 const port = 4800
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
