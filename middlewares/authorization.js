@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require("../models/user")
-const { generateAccessToken, generateRefreshToken, accessTokenLifetime, refreshTokenLifetime } = require("../utils/jwt")
+const { accessTokenLifetime, refreshTokenLifetime, generateTokenSet } = require("../utils/jwt")
 
 module.exports.authenticateToken = async (req, res, next) => {
     const { token, refreshToken } = req.cookies;
@@ -23,10 +23,8 @@ module.exports.authenticateToken = async (req, res, next) => {
             if (!user) {
                 throw new Error("invalid refresh token")
             }
-            const payload = user.email;
 
-            const newAccessToken = generateAccessToken(payload)
-            const newRefreshToken = generateRefreshToken(payload)
+            const [newAccessToken, newRefreshToken] = generateTokenSet(user.email, user.role);
 
 
             res.cookie("token", newAccessToken, {
