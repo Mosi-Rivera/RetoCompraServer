@@ -32,13 +32,14 @@ module.exports.registerController = async (req, res) => {
             email,
             password: hashedPassword
         });
+        
         const user = await newUser.save();
-        const token = jwt.sign({ userEmail: user.email }, process.env.ACCESS_TOKEN_SECRET, {
-            expiresIn: '15m'
-        });
-        const refreshToken = jwt.sign({ userEmail: user.email }, process.env.REFRESH_TOKEN_SECRET, {
-            expiresIn: '24h'
-        });
+        
+        const newEmail = user.email 
+        
+        const token = generateAccessToken(newEmail)
+        const refreshToken = generateRefreshToken(newEmail)
+
         res.cookie('token', token, { httpOnly: true, maxAge: 1000 * 60 * 15 })
         res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 })
         user.refreshTokens.push({
