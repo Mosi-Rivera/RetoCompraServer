@@ -8,7 +8,7 @@ const cors = require('cors');
 require('dotenv').config();
 const app = express();
 const authRoutes = require('./routes/auth_route')
-
+console.log(process.env.ACCESS_TOKEN_SECRET)
 if (!process.env.NODE_ENV) app.use(cors({
     credentials: true,
     origin: "http://localhost:5173"
