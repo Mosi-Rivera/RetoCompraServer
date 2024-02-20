@@ -24,6 +24,13 @@ module.exports.registerController = async (req, res) => {
         const lastName = body.lastName;
         if (!schema.validate(password) || !emailValidator.validate(email)) { return res.sendStatus(500) }
 
+        const duplicatedUser = await User.findOne({email: email})
+        
+        if (duplicatedUser) {
+            console.log(duplicatedUser) 
+            return res.status(400).json( {field:"email", errorMessage: "Email already registered"})
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10)
 
         const newUser = new User({
