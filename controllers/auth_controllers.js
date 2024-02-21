@@ -78,16 +78,16 @@ module.exports.loginController = async (req, res) => {
         const oldRefreshToken = req.body.refreshToken;
 
         if (!password || !email) {
-            return res.status(500).json({ message: "Invalid Credentials" })
+            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" })
         }
         let user = await User.findOne({ email })
         if (!user) {
-            return res.status(500).json({ error: "Invalid Credentials" });
+            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" });
         }
         const validPassword = await bcrypt.compare(password, user.password)
 
         if (!validPassword) {
-            return res.status(500).json({ error: "Invalid Credentials" });
+            return res.status(400).json( {field: "server", errorMessage: "Invalid Credentials" });
         }
         const accessToken = generateAccessToken(email)
         console.log(`first access token: ${accessToken}`)
