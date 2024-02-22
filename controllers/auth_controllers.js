@@ -164,6 +164,6 @@ module.exports.logoutController = async (req, res, next) => {
         }
         res.sendStatus(200);
     } catch (error) {
-        res.sendStatus(500) && next(err);
+        res.sendStatus(500) && next(error);
     }
 }
