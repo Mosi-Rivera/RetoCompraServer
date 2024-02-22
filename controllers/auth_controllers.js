@@ -5,6 +5,7 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const schema = new passwordValidator();
 const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
+const CryptoJS = require("crypto-js")
 
 
 
@@ -19,9 +20,11 @@ module.exports.registerController = async (req, res) => {
     try {
         const body = req.body;
         const email = body.email;
-        const password = body.password;
+        let password = body.password;
         const firstName = body.firstName;
         const lastName = body.lastName;
+        password = CryptoJS.AES.decrypt(password, process.env.VITE_KEY).toString(CryptoJS.enc.Utf8);
+
         if (!schema.validate(password) || !emailValidator.validate(email)) { return res.sendStatus(500) }
 
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -32,11 +35,11 @@ module.exports.registerController = async (req, res) => {
             email,
             password: hashedPassword
         });
-        
+
         const user = await newUser.save();
-        
-        const newEmail = user.email 
-        
+
+        const newEmail = user.email
+
         const token = generateAccessToken(newEmail)
         const refreshToken = generateRefreshToken(newEmail)
 
@@ -67,8 +70,12 @@ module.exports.registerController = async (req, res) => {
 
 module.exports.loginController = async (req, res) => {
     try {
-        const { email, password } = req.body
+        const body = req.body;
+        const email = body.email;
+        let password = body.password;
         const oldRefreshToken = req.body.refreshToken;
+
+        password = CryptoJS.AES.decrypt(password, process.env.VITE_KEY).toString(CryptoJS.enc.Utf8);
 
         if (!password || !email) {
             return res.status(500).json({ message: "Invalid Credentials" })
@@ -102,7 +109,7 @@ module.exports.loginController = async (req, res) => {
 
         const expirationDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
         if (oldRefreshToken)
-            user.refreshTokens = user.refreshTokens.filter(({token}) => token !== oldRefreshToken);
+            user.refreshTokens = user.refreshTokens.filter(({ token }) => token !== oldRefreshToken);
         user.refreshTokens.push({
             token: refreshToken,
             expiration: expirationDate
@@ -127,8 +134,8 @@ module.exports.loginController = async (req, res) => {
 module.exports.whoAmIController = async (req, res, next) => {
     try {
         const email = req.email;
-        const user = await User.findOne({email});
-        console.log(email) 
+        const user = await User.findOne({ email });
+        console.log(email)
         if (!user) {
             throw new Error("Err: User not found!");
         }
@@ -148,13 +155,13 @@ module.exports.whoAmIController = async (req, res, next) => {
 module.exports.logoutController = async (req, res, next) => {
     try {
         const refreshToken = req.cookies.refreshToken;
-        res.clearCookie("token", {httpOnly: true});
+        res.clearCookie("token", { httpOnly: true });
         if (refreshToken) {
-            const {email} = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+            const { email } = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
             console.log(email);
-            await User.findOneAndUpdate({email}, {$pull: {refreshTokens: {token: refreshToken}}});
-            res.clearCookie("refreshToken", {httpOnly: true});
-        } 
+            await User.findOneAndUpdate({ email }, { $pull: { refreshTokens: { token: refreshToken } } });
+            res.clearCookie("refreshToken", { httpOnly: true });
+        }
         res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(err);
