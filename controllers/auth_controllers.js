@@ -27,6 +27,13 @@ module.exports.registerController = async (req, res) => {
 
         if (!schema.validate(password) || !emailValidator.validate(email)) { return res.sendStatus(500) }
 
+        const duplicatedUser = await User.findOne({email: email})
+        
+        if (duplicatedUser) {
+            console.log(duplicatedUser) 
+            return res.status(400).json( {field:"email", errorMessage: "Email already registered"})
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10)
 
         const newUser = new User({
@@ -78,16 +85,16 @@ module.exports.loginController = async (req, res) => {
         password = CryptoJS.AES.decrypt(password, process.env.VITE_KEY).toString(CryptoJS.enc.Utf8);
 
         if (!password || !email) {
-            return res.status(500).json({ message: "Invalid Credentials" })
+            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" })
         }
         let user = await User.findOne({ email })
         if (!user) {
-            return res.status(500).json({ error: "Invalid Credentials" });
+            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" });
         }
         const validPassword = await bcrypt.compare(password, user.password)
 
         if (!validPassword) {
-            return res.status(500).json({ error: "Invalid Credentials" });
+            return res.status(400).json( {field: "server", errorMessage: "Invalid Credentials" });
         }
         const accessToken = generateAccessToken(email)
         console.log(`first access token: ${accessToken}`)
