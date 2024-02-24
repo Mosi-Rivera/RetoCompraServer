@@ -7,8 +7,6 @@ const schema = new passwordValidator();
 const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
 const CryptoJS = require("crypto-js")
 
-
-
 schema
     .is().min(5)
     .is().max(100)
@@ -71,7 +69,8 @@ module.exports.registerController = async (req, res) => {
     }
     catch (err) {
         console.log(err);
-        res.sendStatus(500);
+        res.sendStatus(500) && next(err);
+
     }
 }
 
