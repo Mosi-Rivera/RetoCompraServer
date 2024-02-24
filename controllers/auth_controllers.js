@@ -14,7 +14,7 @@ schema
     .has().lowercase()
     .has().digits()
 
-module.exports.registerController = async (req, res) => {
+module.exports.registerController = async (req, res, next) => {
     try {
         const body = req.body;
         const email = body.email;
@@ -25,11 +25,11 @@ module.exports.registerController = async (req, res) => {
 
         if (!schema.validate(password) || !emailValidator.validate(email)) { return res.sendStatus(500) }
 
-        const duplicatedUser = await User.findOne({email: email})
-        
+        const duplicatedUser = await User.findOne({ email: email })
+
         if (duplicatedUser) {
-            console.log(duplicatedUser) 
-            return res.status(400).json( {field:"email", errorMessage: "Email already registered"})
+            console.log(duplicatedUser)
+            return res.status(400).json({ field: "email", errorMessage: "Email already registered" })
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -67,14 +67,14 @@ module.exports.registerController = async (req, res) => {
             }
         });
     }
-    catch (err) {
-        console.log(err);
-        res.sendStatus(500) && next(err);
+    catch (error) {
+        console.log(error);
+        res.sendStatus(500) && next(error);
 
     }
 }
 
-module.exports.loginController = async (req, res) => {
+module.exports.loginController = async (req, res, next) => {
     try {
         const body = req.body;
         const email = body.email;
@@ -93,7 +93,7 @@ module.exports.loginController = async (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password)
 
         if (!validPassword) {
-            return res.status(400).json( {field: "server", errorMessage: "Invalid Credentials" });
+            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" });
         }
         const accessToken = generateAccessToken(email)
         console.log(`first access token: ${accessToken}`)
@@ -133,7 +133,7 @@ module.exports.loginController = async (req, res) => {
             }
         })
     } catch (error) {
-        res.status(500).json({ error: "Invalid Credentials " + error })
+        res.status(500).json({ error: "Invalid Credentials " + error }) && next(error)
     }
 }
 
