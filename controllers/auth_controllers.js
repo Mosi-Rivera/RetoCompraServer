@@ -28,8 +28,7 @@ module.exports.registerController = async (req, res, next) => {
         const duplicatedUser = await User.findOne({ email: email })
 
         if (duplicatedUser) {
-            console.log(duplicatedUser)
-            return res.status(400).json({ field: "email", errorMessage: "Email already registered" })
+            return res.status(400).json({ field: "server", errorMessage: "Oops, something went wrong. Please try again" })
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -68,7 +67,6 @@ module.exports.registerController = async (req, res, next) => {
         });
     }
     catch (error) {
-        console.log(error);
         res.sendStatus(500) && next(error);
 
     }
@@ -96,7 +94,6 @@ module.exports.loginController = async (req, res, next) => {
             return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" });
         }
         const accessToken = generateAccessToken(email)
-        console.log(`first access token: ${accessToken}`)
         res.cookie("token", accessToken, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24,
@@ -105,7 +102,6 @@ module.exports.loginController = async (req, res, next) => {
         })
 
         const refreshToken = generateRefreshToken(email)
-        console.log(`first refresh token: ${refreshToken}`)
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24,
@@ -141,7 +137,6 @@ module.exports.whoAmIController = async (req, res, next) => {
     try {
         const email = req.email;
         const user = await User.findOne({ email });
-        console.log(email)
         if (!user) {
             throw new Error("Err: User not found!");
         }
@@ -164,7 +159,6 @@ module.exports.logoutController = async (req, res, next) => {
         res.clearCookie("token", { httpOnly: true });
         if (refreshToken) {
             const { email } = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-            console.log(email);
             await User.findOneAndUpdate({ email }, { $pull: { refreshTokens: { token: refreshToken } } });
             res.clearCookie("refreshToken", { httpOnly: true });
         }
