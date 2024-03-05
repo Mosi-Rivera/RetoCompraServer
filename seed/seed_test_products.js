@@ -8,7 +8,7 @@ const sizes = require('../constants/size').arr;
 const brands = ["NIKE", "H&M", "GC", "ADIDAS"];
 const colors = ["RED", "BLUE", "YELLOW", "GREEN", "PURPLE", "PINK", "BROWN", "BLACK", "WHITE", "MULTI"];
 const images = [
-    'https://cdn.pixabay.com/photo/2016/12/06/09/31/blank-1886008_640.png',//red
+    'https://imgs.search.brave.com/t4IfTANR1iwFLt8G1PRuwKOpNz4uQfZpJnDsvLs8RlY/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NzFrWlJ0bVY4Ukwu/anBn',//red
     'https://cdn.pixabay.com/photo/2017/02/15/11/42/t-shirt-2068353_640.png',//blue
     'https://media.istockphoto.com/id/831591150/photo/yellow-t-shirts-front-and-back-used-as-design-template.jpg?b=1&s=170667a&w=0&k=20&c=4Wm0BXRriJONblmVKGx5aTiJLeJy0oS-f22zB6zL8us=',//yellow
     'https://cdn.pixabay.com/photo/2016/11/23/06/57/isolated-t-shirt-1852114_640.png',//green
@@ -16,7 +16,7 @@ const images = [
     'https://cdn.pixabay.com/photo/2017/10/22/19/10/shirt-2878907_960_720.jpg',//pink
     'https://media.istockphoto.com/id/1295521820/photo/mens-brown-dark-chocolate-blank-t-shirt-template-from-two-sides-natural-shape-on-invisible.jpg?s=1024x1024&w=is&k=20&c=rNSJ1PE_vUadGU7ObCJn2fTp9UNmh2aRumGjnl-p_WU=',//brown
     'https://cdn.pixabay.com/photo/2016/12/06/09/30/blank-1886001_640.png',//black
-    'https://cdn.pixabay.com/photo/2016/12/06/09/31/blank-1886013_640.png', //white
+    'https://imgs.search.brave.com/lGmDn-pHilmKXPsq49Kdx9mqXdbo6upsCNDQ42c1Cag/rs:fit:500:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NzEtWExsMUl3eUwu/anBn', //white
     'https://media.istockphoto.com/id/859807234/photo/tie-dye-shirt.jpg?s=1024x1024&w=is&k=20&c=uvY2j0OLFOPSzAh2WhBnsBdr-aMg1oAbZ8-0oCkmBOo=',//multi
 ];
 
@@ -57,12 +57,28 @@ const atoi = (str, def = 10) => {
                 const color = colors[colorIndex];
                 const img = images[colorIndex];
                 const price = Math.floor((5 + Math.random() * 40) * 100) / 100;
-                const variantSizes = [];
-                for (let k = 0, kl = sizes.length; k < kl; k++)
-                    variantSizes.push({
-                        size: sizes[k],
-                        stock: Math.floor(Math.random() * 30 + 1)
-                    });
+                const stock = {
+                    XS: {
+                        size: "XS",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                    S: {
+                        size: "S",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                    M: {
+                        size: "M",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                    L: {
+                        size: "L",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                    XL: {
+                        size: "XL",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                };
                 variants.push({
                     product: _id,
                     name,
@@ -77,7 +93,7 @@ const atoi = (str, def = 10) => {
                         currency: USD,
                         value: price
                     },
-                    sizes: variantSizes
+                    stock: stock
                 });
             }
         }
