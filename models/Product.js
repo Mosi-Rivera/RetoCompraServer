@@ -19,8 +19,6 @@ ProductSchema.statics.parseQuery = function(query)
 	const result = {};
 	if (query.name) 
 		result.name = query.name;
-	if (query.description) 
-		result.description;
 	if (query.section) 
 		result.section = query.section;
 	if (query.brand) 
