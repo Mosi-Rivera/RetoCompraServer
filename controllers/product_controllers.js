@@ -4,7 +4,7 @@ const Product = require("../models/Product");
 module.exports.getProducts =  async (req, res, next) => {
     try
     {
-        const productQuery = Product.parseQuery(req.body);
+        const productQuery = Product.parseQuery(req.query);
         const productIds = (await Product.find(productQuery).select({ _id: 1})).map( ({_id}) => _id );
 
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
