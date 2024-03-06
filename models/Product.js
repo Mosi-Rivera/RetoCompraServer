@@ -14,4 +14,20 @@ const ProductSchema = new mongoose.Schema({
 	timestamps: true
 });
 
+ProductSchema.statics.parseQuery = function(query)
+{
+	const result = {};
+	if (query.name) 
+		result.name = query.name;
+	if (query.section) 
+		result.section = query.section;
+	if (query.brand) 
+		result.brand = query.brand;
+	delete query.name;
+	delete query.brand;
+	delete query.section;
+	delete query.description;
+	return (result);
+}
+
 module.exports = mongoose.model('Product', ProductSchema);
