@@ -77,7 +77,7 @@ module.exports.loginController = async (req, res, next) => {
         const body = req.body;
         const email = body.email;
         let password = body.password;
-        const oldRefreshToken = req.body.refreshToken;
+        const oldRefreshToken = req.cookies.refreshToken;
 
         password = CryptoJS.AES.decrypt(password, process.env.VITE_KEY).toString(CryptoJS.enc.Utf8);
 
@@ -111,12 +111,14 @@ module.exports.loginController = async (req, res, next) => {
 
         const expirationDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
         if (oldRefreshToken)
+        {
             user.refreshTokens = user.refreshTokens.filter(({ token }) => token !== oldRefreshToken);
-        user.refreshTokens.push({
-            token: refreshToken,
-            expiration: expirationDate
-        });
-        user.save();
+            user.refreshTokens.push({
+                token: refreshToken,
+                expiration: expirationDate
+            });
+            user.save();
+        }
 
 
         res.status(200).json({
