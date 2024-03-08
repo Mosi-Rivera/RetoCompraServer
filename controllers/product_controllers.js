@@ -37,6 +37,7 @@ module.exports.searchProducts = async (req, res, next) => {
                     {name: regex},
                     {description: regex},
                     {brand: regex},
+                    {section: regex}
         ];
         const productIds = (await Product.find(productQuery).select({ _id: 1})).map( ({_id}) => _id );
         console.log(productIds, productQuery);
