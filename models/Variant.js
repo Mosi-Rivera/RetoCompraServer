@@ -75,12 +75,7 @@ VariantSchema.statics.parseSizeQuery = (size) => {
 	if (sizesConstants.arr.includes(size))
 	{
 		return {
-			sizes: {
-				$elemMatch: {
-					size: size,
-					stock: {$gt: 0}
-				}
-			}
+			[`stock.${size}.stock`]: {$gt: 0}
 		};
 	}
 	else
