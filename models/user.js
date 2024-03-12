@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema({
             _id: 0,
             sku: {type: mongoose.Types.ObjectId, required: true},
             size: {type: String, enum: sizes.arr, required: true},
-            quantity: {type: Number, required: true, min: 1, max: 5}
+            quantity: {type: Number, required: true, min: 1, max: 5, set: function(value){ return value > 5 ? 5 : value; }}
         }]
     }
 }, {
@@ -26,17 +26,28 @@ const UserSchema = new mongoose.Schema({
     }
 );
 
-UserSchema.methods.cartItemRemove = async function(sku) {
+UserSchema.methods.cartCalculateTotalPrice = async function() {
+    const cartItems = this.cart.items;
+    const ids = cartItems.map(({sku}) => sku);
+    const variants = await Variant.find({_id: {$in: ids}}).select({price: {value: 1}});
+    const variantsMap = new Map();
+    for (const variant of variants)
+        variantsMap.set(variant._id.toString(), variant);
+    console.log(variantsMap);
+    return cartItems.reduce((acc, {sku, quantity}) => acc + (variantsMap.get(sku.toString())?.price?.value || 0) * quantity, 0).toFixed(2);
+}
+
+UserSchema.methods.cartItemRemove = async function(sku, size) {
     if (typeof sku === 'string')
-        sku = mongoose.Types.ObjectId(sku);
-    this.cart.items = this.cart.items.filter(({sku: itemSku}) => !itemSku.equals(sku));
+        sku = new mongoose.Types.ObjectId(sku);
+    this.cart.items = this.cart.items.filter(({sku: itemSku, size: itemSize}) => !(itemSku.equals(sku) && itemSize == size));
     return this.save();
 }
 
 UserSchema.methods.cartItemAdd = async function (sku, size, quantity) {
     let didAddFlag = false;
     if (typeof sku === 'string')
-        sku = mongoose.Types.ObjectId(sku);
+        sku = new mongoose.Types.ObjectId(sku);
 
     if (typeof quantity == 'string')
     {
@@ -52,37 +63,48 @@ UserSchema.methods.cartItemAdd = async function (sku, size, quantity) {
     if (!variant)
         throw new Error("Error: Invalid sku.");
 
-    const stock = variant[size];
+    const stock = variant.stock[size].stock;
     if (stock == 0)
     {
-        return this.removeCartItem(sku);
+        return this.cartItemRemove(sku, size);
     }
 
     for (const item of this.cart.items)
     {
-        if (item.sku.equals(sku))
+        if (item.sku.equals(sku) && item.size === size)
         {
             didAddFlag = true;
-            item.quantity += Math.max(quantity, stock);
+            console.log(quantity, item, quantity, item.quantity, stock, Math.max(quantity, stock));
+            item.quantity = Math.min(item.quantity + quantity, stock);
             break;
         }
     }
 
     if (!didAddFlag)
+    {
         this.cart.items.push({sku, size, quantity});
+        console.log(sku, size, quantity);
+    }
     return this.save();
 }
 
-UserSchema.methods.cartItemSetQuantity = async (sku, quantity) => {
+UserSchema.methods.cartItemSetQuantity = async function(sku, size, quantity) {
     if (typeof sku === 'string')
-        sku = mongoose.Types.ObjectId(sku);
+        sku = new mongoose.Types.ObjectId(sku);
 
     if (typeof quantity == 'string')
     {
         quantity = parseInt(quantity.trim());
-        if (isNaN(quantity) || quantity === 0)
+        if (isNaN(quantity))
             throw new Error('Error: Invalid quantity.');
+        else if (quantity === 0)
+        {
+            this.cartItemRemove(sku, size);
+        }
     }
+
+    if (!sizes.arr.includes(size))
+        throw new Error("Error: Invalid size.");
 
     const variant = await Variant.findById(sku);
     if (!variant)
@@ -91,12 +113,12 @@ UserSchema.methods.cartItemSetQuantity = async (sku, quantity) => {
 
     for (const item of this.cart.items)
     {
-        if (item.sku.equals(sku))
+        if (item.sku.equals(sku) && item.size === size)
         {
-            const stock = variant[item.size];
+            const stock = variant.stock[item.size].stock;
             if (stock == 0)
             {
-                return this.removeCartItem(sku);
+                return this.cartItemRemove(sku, size);
             }
             quantity = Math.min(stock, quantity);
             item.quantity = quantity;
@@ -106,7 +128,7 @@ UserSchema.methods.cartItemSetQuantity = async (sku, quantity) => {
     return this;
 }
 
-UserSchema.methods.cartClear = async () => {
+UserSchema.methods.cartClear = async function() {
     this.cart.items = [];
     return this.save();
 }

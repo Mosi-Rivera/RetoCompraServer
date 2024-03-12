@@ -79,19 +79,19 @@ module.exports.loginController = async (req, res, next) => {
         let password = body.password;
         const oldRefreshToken = req.cookies.refreshToken;
 
-        password = CryptoJS.AES.decrypt(password, process.env.VITE_KEY).toString(CryptoJS.enc.Utf8);
+        // password = CryptoJS.AES.decrypt(password, process.env.VITE_KEY).toString(CryptoJS.enc.Utf8);
 
         if (!password || !email) {
-            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" })
+            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" }) && next(new Error(new Error("invalid username/password")));
         }
         let user = await User.findOne({ email })
         if (!user) {
-            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" });
+            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" }) && next(new Error('User does not exist.'));
         }
         const validPassword = await bcrypt.compare(password, user.password)
 
         if (!validPassword) {
-            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" });
+            return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" }) && next(new Error('Password does not match.'));
         }
         const accessToken = generateAccessToken(email)
         res.cookie("token", accessToken, {

@@ -21,6 +21,7 @@ module.exports.authenticateToken = async (req, res, next) => {
             }
             const { email } = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
             const user = await User.findOne({ email, "refreshTokens.token": refreshToken });
+            console.log(user, email, refreshToken);
             if (!user) {
                 throw new Error("invalid refresh token")
             }
