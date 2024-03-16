@@ -56,7 +56,7 @@ UserSchema.methods.getCartAndPrice = async function() {
         cart.push({
             _id: sku,
             color: variant.color,
-            name: variant.product.color,
+            name: variant.product.name,
             price: variant.price.value,
             image: variant.assets.thumbnail,
             totalPrice: (variant.price.value * quantity).toFixed(2),
