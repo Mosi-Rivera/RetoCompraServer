@@ -5,7 +5,7 @@ module.exports.getCart = async (req, res, next) => {
     try {
         const email = req.email;
         const user = await User.findOne({email});
-        const [cart, price] = user.getCartAndPrice();
+        const [cart, price] = await user.getCartAndPrice();
         res.status(200).json({cart: cart, totalPrice: price});
     } catch (error) {
         res.sendStatus(500) && next(error);

@@ -28,35 +28,38 @@ const UserSchema = new mongoose.Schema({
 
 UserSchema.methods.getCartAndPrice = async function() {
     const cartItems = this.cart.items;
+    console.log(cartItems);
     const ids = cartItems.map(({sku}) => sku);
     const variants = await Variant.find({_id: {$in: ids}}).populate('product', {name: 1, section: 1, _id: 0}).select({
         price: {value: 1},
         assets: {thumbnail: 1},
+        size: 1,
         color: 1,
     });
 
     const variantsMap = new Map();
     for (const variant of variants)
-        variantsMap.set(variant._id.toString() + variant.size, variant);
+        variantsMap.set(variant._id.toString(), variant);
 
     const cart = [];
     let totalPrice = 0;
     for (const {sku, size, quantity} of cartItems)
     {
-        const variant = variantsMap.get(sku + size);
+        const variant = variantsMap.get(sku.toString());
+        console.log(variant, variantsMap);
         if (!variant)
         {
             this.cartItemRemove(sku, size);
             continue;
         }
-        totalPrice += variant.price * quantity;
+        totalPrice += variant.price.value * quantity;
         cart.push({
             _id: sku,
             color: variant.color,
             name: variant.product.color,
             price: variant.price.value,
             image: variant.assets.thumbnail,
-            totalPrice: variant.price * quantity,
+            totalPrice: (variant.price.value * quantity).toFixed(2),
             size,
             quantity
         });
