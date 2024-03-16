@@ -1,7 +1,9 @@
-const { addItemToCart, setItemQuantityCart, removeItemFromCart, clearCart } = require('../controllers/cart_controllers');
+const { addItemToCart, setItemQuantityCart, removeItemFromCart, clearCart, getCart } = require('../controllers/cart_controllers');
 const { authenticateToken } = require('../middlewares/authorization');
 
 const router = require('express').Router();
+
+router.route('/').get(authenticateToken, getCart);
 
 router.route('/addItem').post(authenticateToken, addItemToCart);
 

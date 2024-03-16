@@ -26,10 +26,51 @@ const UserSchema = new mongoose.Schema({
     }
 );
 
+UserSchema.methods.getCartAndPrice = async function() {
+    const cartItems = this.cart.items;
+    const ids = cartItems.map(({sku}) => sku);
+    const variants = await Variant.find({_id: {$in: ids}}).populate('product', {name: 1, section: 1, _id: 0}).select({
+        price: {value: 1},
+        assets: {thumbnail: 1},
+        color: 1,
+    });
+
+    const variantsMap = new Map();
+    for (const variant of variants)
+        variantsMap.set(variant._id.toString() + variant.size, variant);
+
+    const cart = [];
+    let totalPrice = 0;
+    for (const {sku, size, quantity} of cartItems)
+    {
+        const variant = variantsMap.get(sku + size);
+        if (!variant)
+        {
+            this.cartItemRemove(sku, size);
+            continue;
+        }
+        totalPrice += variant.price * quantity;
+        cart.push({
+            _id: sku,
+            color: variant.color,
+            name: variant.product.color,
+            price: variant.price.value,
+            image: variant.assets.thumbnail,
+            totalPrice: variant.price * quantity,
+            size,
+            quantity
+        });
+    }
+
+    return [cart, totalPrice.toFixed(2)];
+}
+
 UserSchema.methods.cartCalculateTotalPrice = async function() {
     const cartItems = this.cart.items;
     const ids = cartItems.map(({sku}) => sku);
-    const variants = await Variant.find({_id: {$in: ids}}).select({price: {value: 1}});
+    const variants = await Variant.find({_id: {$in: ids}}).select({
+        price: {value: 1}
+    });
     const variantsMap = new Map();
     for (const variant of variants)
         variantsMap.set(variant._id.toString(), variant);
@@ -125,7 +166,7 @@ UserSchema.methods.cartItemSetQuantity = async function(sku, size, quantity) {
             return this.save();
         }
     }
-    return this;
+    return null;
 }
 
 UserSchema.methods.cartClear = async function() {

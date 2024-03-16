@@ -5,7 +5,8 @@ module.exports.getCart = async (req, res, next) => {
     try {
         const email = req.email;
         const user = await User.findOne({email});
-        res.status(200).json({cart: user.cart, totalPrice: await user.cartCalculateTotalPrice()});
+        const [cart, price] = user.getCartAndPrice();
+        res.status(200).json({cart: cart, totalPrice: price});
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -41,6 +42,8 @@ module.exports.setItemQuantityCart = async (req, res, next) => {
         const {sku, quantity, size} = req.body;
         let user = await User.findOne({email});
         user = await user.cartItemSetQuantity(sku, size, quantity);
+        if (user)
+            throw new Error('Could not set item quantity.');
         res.status(200).json({cart: user.cart, totalPrice: await user.cartCalculateTotalPrice()});
     } catch (error) {
         res.sendStatus(500) && next(error);
