@@ -127,7 +127,8 @@ module.exports.loginController = async (req, res, next) => {
                 lastName: user.lastName,
                 email: user.email,
                 role: user.role,
-                _id: user._id
+                _id: user._id,
+                cartCount: user.cart?.reduce((acc, {quantity}) => acc + quantity, 0) || 0
             }
         })
     } catch (error) {
@@ -147,7 +148,8 @@ module.exports.whoAmIController = async (req, res, next) => {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                cartCount: user.cart?.reduce((acc, {quantity}) => acc + quantity, 0) || 0
             }
         });
     } catch (error) {

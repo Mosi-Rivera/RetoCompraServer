@@ -38,7 +38,7 @@ module.exports.setItemQuantityCart = async (req, res, next) => {
     try {
         const email = req.email;
         const {sku, quantity, size} = req.body;
-        User.cartItemSetQuantity(email, sku, size, quantity);
+        await User.cartItemSetQuantity(email, sku, size, quantity);
         res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);
