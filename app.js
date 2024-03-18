@@ -26,7 +26,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 
 app.use('*', (req, res, next) => {
-    res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl));
+    res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl + '\nmethod: ' + req.method));
 });
 
 const port = 4800

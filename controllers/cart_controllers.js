@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Variant = require("../models/Variant");
 const User = require("../models/user");
 
@@ -37,7 +38,7 @@ module.exports.setItemQuantityCart = async (req, res, next) => {
     try {
         const email = req.email;
         const {sku, quantity, size} = req.body;
-        await User.cartItemSetQuantity(email, sku, size, quantity);
+        User.cartItemSetQuantity(email, sku, size, quantity);
         res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);

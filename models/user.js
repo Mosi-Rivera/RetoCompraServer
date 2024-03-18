@@ -58,7 +58,7 @@ UserSchema.statics.cartItemRemove = async function(email, sku, size) {
     return;
 }
 
-UserSchema.statics.cartItemAdd = function (sku, size, quantity) {
+UserSchema.statics.cartItemAdd = function (email, sku, size, quantity) {
     if (parseInt(quantity) <= 0)
         throw new Error('Error: Invalid quantity.');
     this.updateOne({email, $elemMatch: {'cart.variant': sku, 'cart.size': size}}, {
@@ -69,13 +69,27 @@ UserSchema.statics.cartItemAdd = function (sku, size, quantity) {
     }, {upsert: true});
 }
 
-UserSchema.statics.cartItemSetQuantity = async function(sku, size, quantity) {
+UserSchema.statics.cartItemSetQuantity = async function(email, sku, size, quantity) {
     if (parseInt(quantity) <= 0)
-        throw new Error('Error: Invalid quantity.');
-    const {nModified} = this.updateOne({email, $elemMatch: { variant: sku, size }}, {
-        'cart.$.quantity': quantity
-    });
-    if (nModified === 0)
+    throw new Error('Error: Invalid quantity.');
+    console.log(email, sku, quantity, size);
+    const {modifiedCount} = await this.updateOne(
+        {
+            email: email,
+            cart: {
+                $elemMatch: {
+                    variant: sku,
+                    size: size
+                }
+            }
+        },
+        {
+            $set: {
+                'cart.$.quantity': quantity
+            }
+        }
+    );
+    if (!modifiedCount)
         throw new Error('Error: Item not found.');
     return;
 }
