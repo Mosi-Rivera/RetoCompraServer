@@ -39,9 +39,7 @@ UserSchema.statics.getCart = async function(email) {
         });
     if (!user)
         throw new Error("Err: user not found.");
-    const cart = user.cart;
-    const totalPrice = cart.reduce((acc, {quantity, variant}) => acc + quantity * variant.price.value, 0).toFixed(2);
-    return {items: cart, totalPrice};
+    return {items: user.cart};
 }
 
 UserSchema.statics.cartItemRemove = async function(email, sku, size) {
