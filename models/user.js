@@ -72,7 +72,6 @@ UserSchema.statics.cartItemAdd = function (email, sku, size, quantity) {
 UserSchema.statics.cartItemSetQuantity = async function(email, sku, size, quantity) {
     if (parseInt(quantity) <= 0)
     throw new Error('Error: Invalid quantity.');
-    console.log(email, sku, quantity, size);
     const {modifiedCount} = await this.updateOne(
         {
             email: email,
