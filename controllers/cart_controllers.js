@@ -16,8 +16,8 @@ module.exports.addItemToCart = async (req, res, next) => {
     try {
         const email = req.email;
         const {sku, size, quantity} = req.body;
-        const newAmount = await User.cartItemAdd(email, sku, size, quantity);
-        res.status(200).json({newAmount});
+        const response = await User.cartItemAdd(email, sku, size, quantity);
+        res.status(200).json(response);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }

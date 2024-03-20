@@ -2,6 +2,7 @@ const sizes = require('../constants/size');
 const roleConstants = require('../constants/role');
 const mongoose = require("mongoose");
 const Variant = require('./Variant');
+const { parseInputStrToInt } = require('../utils/input');
 
 const UserSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
@@ -29,7 +30,7 @@ UserSchema.statics.getCart = async function(email) {
         _id: 0,
         cart: 1
     })
-    .populate({
+        .populate({
             path: 'cart.variant',
             select: 'color product price.value assets.thumbnail',
             populate: {
@@ -38,7 +39,7 @@ UserSchema.statics.getCart = async function(email) {
             }
         });
     if (!user)
-        throw new Error("Err: user not found.");
+    throw new Error("Err: user not found.");
     return {items: user.cart};
 }
 
@@ -52,24 +53,102 @@ UserSchema.statics.cartItemRemove = async function(email, sku, size) {
         }
     });
     if (nModified == 0)
-        throw new Error('Error: Item not found and therefor not removed.');
+    throw new Error('Error: Item not found and therefor not removed.');
     return;
 }
 
-UserSchema.statics.cartItemAdd = function (email, sku, size, quantity) {
-    if (parseInt(quantity) <= 0)
-        throw new Error('Error: Invalid quantity.');
-    this.updateOne({email, $elemMatch: {'cart.variant': sku, 'cart.size': size}}, {
-        $inc: {'cart.$.quantity': quantity},
-        $setOnInsert: {
-            'cart.$': {variant: sku, quantity, size}
+UserSchema.statics.cartItemAdd = async function (email, sku, size, quantity) {
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        sku = new mongoose.Types.ObjectId(sku);
+        quantity = parseInputStrToInt(quantity, 1);
+        const variant = await Variant.findById(sku, {[`stock.${size}.stock`]: 1}, {session});
+        if (!variant || !variant.stock?.[size]?.stock)
+        throw new Error('Invalid sku or stock out of stock.');
+        const stock = variant.stock?.[size]?.stock || 0;
+        const user = await this.findOne({email, cart: {$elemMatch: {size, variant: sku}}}, {}, {session});
+        if (!user) {
+            await this.updateOne({
+                email,
+            },
+                {
+                    $push: {
+                        cart: {
+                            variant: sku,
+                            size,
+                            quantity
+                        }
+                    }
+                },
+                {session}
+            );
         }
-    }, {upsert: true});
+        else {
+            await this.aggregate([
+                {
+                    $match: {
+                        email,
+                        cart: { $elemMatch: {
+                            variant: sku,
+                            size
+                        } }
+                    }
+                },
+                {
+                    $set: {
+                        cart: {
+                            $map: {
+                                input: "$cart",
+                                as: "item",
+                                in: {
+                                    $cond: {
+                                        if: { $and: [
+                                            { $eq: ["$$item.variant", sku] },
+                                            { $eq: ["$$item.size", size] }
+                                        ] },
+                                        then: {
+                                            $mergeObjects: [
+                                                "$$item",
+                                                { quantity: { $min: [{ $add: ["$$item.quantity", quantity]}, Math.min(stock, 5)] } }
+                                            ]
+                                        },
+                                        else: "$$item"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    $merge: {
+                        into: "users",
+                        on: "_id",
+                        whenMatched: "replace"
+                    }
+                }
+            ]);
+        }
+        await session.commitTransaction();
+    } catch (error) {
+        console.log(error)
+        await session.abortTransaction();
+    } finally {
+        session.endSession();
+    }
 }
 
 UserSchema.statics.cartItemSetQuantity = async function(email, sku, size, quantity) {
-    if (parseInt(quantity) <= 0)
+    quantity = parseInputStrToInt(quantity, 1);
+    if (quantity <= 0)
     throw new Error('Error: Invalid quantity.');
+
+    const variant = await Variant.findById(sku, {[`stock.${size}.stock`]: 1, _id: 0});
+    if (!variant)
+    throw new Error("Error: Invalid product sku.");
+    const stock = variant.stock[size].stock;
+    quantity = Math.min(stock, quantity);
     const {modifiedCount} = await this.updateOne(
         {
             email: email,
@@ -87,7 +166,7 @@ UserSchema.statics.cartItemSetQuantity = async function(email, sku, size, quanti
         }
     );
     if (!modifiedCount)
-        throw new Error('Error: Item not found.');
+    throw new Error('Error: Item not found.');
     return;
 }
 

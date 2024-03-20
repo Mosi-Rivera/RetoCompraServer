@@ -79,7 +79,7 @@ module.exports.loginController = async (req, res, next) => {
         let password = body.password;
         const oldRefreshToken = req.cookies.refreshToken;
 
-        password = CryptoJS.AES.decrypt(password, process.env.VITE_KEY).toString(CryptoJS.enc.Utf8);
+        // password = CryptoJS.AES.decrypt(password, process.env.VITE_KEY).toString(CryptoJS.enc.Utf8);
 
         if (!password || !email) {
             return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" }) && next(new Error(new Error("invalid username/password")));
