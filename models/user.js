@@ -32,10 +32,10 @@ UserSchema.statics.getCart = async function(email) {
     })
         .populate({
             path: 'cart.variant',
-            select: 'product price assets.thumbnail',
+            select: 'product price assets.thumbnail stock',
             populate: {
                 path: 'product',
-                select: `name stock`
+                select: 'name'
             }
         });
     if (!user)
