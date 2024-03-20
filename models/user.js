@@ -44,17 +44,17 @@ UserSchema.statics.getCart = async function(email) {
 }
 
 UserSchema.statics.cartItemRemove = async function(email, sku, size) {
-    const {nModified} = await this.updateOne({email}, {
+    const user = await this.findOneAndUpdate({email}, {
         $pull: {
             cart: {
                 variant: sku,
                 size
             }
         }
-    });
-    if (nModified == 0)
-    throw new Error('Error: Item not found and therefor not removed.');
-    return;
+    }, {cart: 1, _id: 0}, {new: true});
+    if (!user)
+        throw new Error('Error: Item not found and therefor not removed.');
+    return user;
 }
 
 UserSchema.statics.cartItemAdd = async function (email, sku, size, quantity) {
@@ -68,8 +68,7 @@ UserSchema.statics.cartItemAdd = async function (email, sku, size, quantity) {
         if (!variant || !variant.stock?.[size]?.stock)
         throw new Error('Invalid sku or stock out of stock.');
         const stock = variant.stock?.[size]?.stock || 0;
-        const user = await this.findOne({email, cart: {$elemMatch: {size, variant: sku}}}, {}, {session});
-        if (!user) {
+        if (!await this.findOne({email, cart: {$elemMatch: {size, variant: sku}}}, {_id: 1}, {session})) {
             await this.updateOne({
                 email,
             },
@@ -131,10 +130,11 @@ UserSchema.statics.cartItemAdd = async function (email, sku, size, quantity) {
             ]);
         }
         await session.commitTransaction();
+        session.endSession();
+        return await this.findOne({email}).select({_id: 0, cart: 1});
     } catch (error) {
         console.log(error)
         await session.abortTransaction();
-    } finally {
         session.endSession();
     }
 }
@@ -146,7 +146,7 @@ UserSchema.statics.cartItemSetQuantity = async function(email, sku, size, quanti
         throw new Error("Error: Invalid product sku.");
     const stock = variant.stock[size].stock;
     quantity = Math.min(stock, quantity);
-    const {modifiedCount} = await this.updateOne(
+    const user = await this.findOneAndUpdate(
         {
             email: email,
             cart: {
@@ -160,11 +160,14 @@ UserSchema.statics.cartItemSetQuantity = async function(email, sku, size, quanti
             $set: {
                 'cart.$.quantity': quantity
             }
+        },
+        {
+            new: true
         }
-    );
-    if (!modifiedCount)
-    throw new Error('Error: Item not found.');
-    return;
+    ).select({cart: 1, _id: 0});
+    if (!user)
+        throw new Error('Error: Item not found.');
+    return user;
 }
 
 UserSchema.statics.cartClear = function(email) {

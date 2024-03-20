@@ -5,8 +5,8 @@ const User = require("../models/user");
 module.exports.getCart = async (req, res, next) => {
     try {
         const email = req.email;
-        const cart = await User.getCart(email);
-        res.status(200).json(cart);
+        const user = await User.getCart(email);
+        res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -16,8 +16,8 @@ module.exports.addItemToCart = async (req, res, next) => {
     try {
         const email = req.email;
         const {sku, size, quantity} = req.body;
-        const response = await User.cartItemAdd(email, sku, size, quantity);
-        res.status(200).json(response);
+        const user = await User.cartItemAdd(email, sku, size, quantity);
+        res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -28,7 +28,7 @@ module.exports.removeItemFromCart = async (req, res, next) => {
         const email = req.email;
         const {sku, size} = req.body;
         await User.cartItemRemove(email, sku, size);
-        res.sendStatus(200);
+        res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
