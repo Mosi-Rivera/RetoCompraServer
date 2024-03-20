@@ -32,14 +32,14 @@ UserSchema.statics.getCart = async function(email) {
     })
         .populate({
             path: 'cart.variant',
-            select: 'color product price.value assets.thumbnail',
+            select: 'product price assets.thumbnail',
             populate: {
                 path: 'product',
-                select: 'name brand'
+                select: `name stock`
             }
         });
     if (!user)
-    throw new Error("Err: user not found.");
+        throw new Error("Err: user not found.");
     return {items: user.cart};
 }
 
@@ -167,7 +167,7 @@ UserSchema.statics.cartItemSetQuantity = async function(email, sku, size, quanti
     ).select({cart: 1, _id: 0});
     if (!user)
         throw new Error('Error: Item not found.');
-    return user;
+    return (Math.min(quantity, 5));
 }
 
 UserSchema.statics.cartClear = function(email) {
