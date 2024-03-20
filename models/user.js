@@ -141,12 +141,9 @@ UserSchema.statics.cartItemAdd = async function (email, sku, size, quantity) {
 
 UserSchema.statics.cartItemSetQuantity = async function(email, sku, size, quantity) {
     quantity = parseInputStrToInt(quantity, 1);
-    if (quantity <= 0)
-    throw new Error('Error: Invalid quantity.');
-
     const variant = await Variant.findById(sku, {[`stock.${size}.stock`]: 1, _id: 0});
     if (!variant)
-    throw new Error("Error: Invalid product sku.");
+        throw new Error("Error: Invalid product sku.");
     const stock = variant.stock[size].stock;
     quantity = Math.min(stock, quantity);
     const {modifiedCount} = await this.updateOne(
