@@ -127,7 +127,7 @@ UserSchema.statics.cartItemAdd = async function (email, sku, size, quantity) {
                         whenMatched: "replace"
                     }
                 }
-            ]);
+            ], {session});
         }
         await session.commitTransaction();
         session.endSession();
