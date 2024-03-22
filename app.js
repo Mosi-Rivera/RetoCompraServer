@@ -6,7 +6,7 @@ const ExpressMongoSanitize = require('express-mongo-sanitize');
 const authRoutes = require('./routes/auth_route')
 const productRoutes = require('./routes/product_routes');
 const cartRoutes = require('./routes/cart_routes');
-const checkoutRoutes = require('./routes/checkout_routes');
+const orderRoutes = require('./routes/order_routes');
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
@@ -25,7 +25,7 @@ app.use(ExpressMongoSanitize());
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
-app.use('/api/checkout', checkoutRoutes);
+app.use('/api/order', orderRoutes);
 
 app.use('*', (req, res, next) => {
     res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl + '\nmethod: ' + req.method));

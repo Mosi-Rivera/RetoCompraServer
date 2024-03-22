@@ -1,4 +1,5 @@
 const Order = require("../models/order");
+const { sendEmail } = require("../utils/mailer");
 
 module.exports.checkoutController = async (req, res, next) => {
     try {
@@ -9,7 +10,9 @@ module.exports.checkoutController = async (req, res, next) => {
         }
 
 	const addressString = `${street} ${country} ${city} ${zip}`;
-        const order = await Order.handleOrderTransaction(email, addressString);
+        const [order, user] = await Order.handleOrderTransaction(email, addressString);
+
+        sendEmail(email, order.toHTMLOrderConfirmation(user));
 
         res.status(200).json(order);
     } catch (error) {
