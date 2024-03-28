@@ -27,7 +27,7 @@ module.exports.removeItemFromCart = async (req, res, next) => {
     try {
         const email = req.email;
         const {sku, size} = req.body;
-        await User.cartItemRemove(email, sku, size);
+        const user = await User.cartItemRemove(email, sku, size);
         res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
