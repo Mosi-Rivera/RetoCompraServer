@@ -5,29 +5,29 @@ const User = require('../models/user');
 
 const orderSchema = new mongoose.Schema(
 	{
-		user: {type: mongoose.Types.ObjectId, required: true, ref: User},
+		user: { type: mongoose.Types.ObjectId, required: true, ref: User },
 		items: [{
-			variant: {type: mongoose.Types.ObjectId, requied: true, ref: Variant},
-			image: {type: String, required: true},
-			name: {type: String, required: true},
-			quantity: {type: Number, required: true},
-			size: {type: String, enum: sizes.arr, required: true},
-			price: {type: Number, required: true}
+			variant: { type: mongoose.Types.ObjectId, requied: true, ref: Variant },
+			image: { type: String, required: true },
+			name: { type: String, required: true },
+			quantity: { type: Number, required: true },
+			size: { type: String, enum: sizes.arr, required: true },
+			price: { type: Number, required: true }
 		}],
-		taxes: {type: Number, required: true},
-		totalPrice: {type: Number, required: true},
-		shippingAddress: {type: String, required: true}
+		taxes: { type: Number, required: true },
+		totalPrice: { type: Number, required: true },
+		shippingAddress: { type: String, required: true }
 	}, {
-		timestamps: true
-	}
+	timestamps: true
+}
 );
 
-orderSchema.statics.handleOrderTransaction = async function(email, addressString) {
+orderSchema.statics.handleOrderTransaction = async function (email, addressString) {
 	try {
 		var session = await mongoose.startSession();
 		session.startTransaction();
 
-		let user = await User.findOne({email}).session(session);
+		let user = await User.findOne({ email }).session(session);
 		if (!user) {
 			throw new Error('Invalid email');
 		}
@@ -38,10 +38,10 @@ orderSchema.statics.handleOrderTransaction = async function(email, addressString
 		let items = [];
 		let totalPrice = 0;
 
-		for (const {variant: sku, size, quantity} of user.cart) {
+		for (const { variant: sku, size, quantity } of user.cart) {
 			const variant = await Variant.findOneAndUpdate(
-				{_id: sku, [`stock.${size}.stock`]: {$gte: quantity}},
-				{$inc: {[`stock.${size}.stock`]: -quantity}}
+				{ _id: sku, [`stock.${size}.stock`]: { $gte: quantity } },
+				{ $inc: { [`stock.${size}.stock`]: -quantity } }
 			).populate('product', 'name').session(session);
 			if (!variant) {
 				throw new Error('Invalid variant or insufficient stock.');
@@ -61,13 +61,13 @@ orderSchema.statics.handleOrderTransaction = async function(email, addressString
 		const newOrder = new this({
 			user: user._id,
 			items,
-			taxes: 0,
-			totalPrice: totalPrice.toFixed(2),
+			taxes: (totalPrice * 0.115).toFixed(2),
+			totalPrice: (totalPrice).toFixed(2),
 			shippingAddress: addressString
 		});
 		const order = await newOrder.save();
 
-		user = await User.findOneAndUpdate({email}, {$set: {cart: []}}, {new: true}).session(session);
+		user = await User.findOneAndUpdate({ email }, { $set: { cart: [] } }, { new: true }).session(session);
 
 		await session.commitTransaction();
 		await session.endSession();
@@ -84,8 +84,7 @@ const toTableCell = str => '<td>' + str + '</td>';
 
 const generateItemRows = items => {
 	let result = '';
-	for (const item of items)
-	{
+	for (const item of items) {
 		result += '<tr>';
 		result += toTableCell('<img width="100" src="' + item.image + '"/>');
 		result += toTableCell(item.name);
@@ -98,7 +97,7 @@ const generateItemRows = items => {
 	return result;
 }
 
-orderSchema.methods.toHTMLOrderConfirmation = function(userInformation) {
+orderSchema.methods.toHTMLOrderConfirmation = function (userInformation) {
 	const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -208,8 +207,9 @@ cursor: default;
 ${generateItemRows(this.items)}
 </table>
 <div>
-<div><span>taxes?:</span> <strong>${this.taxes}</strong></div>
-<div><span>Total Price:</span> <strong>${this.totalPrice}</strong></div>
+<div><span>Sub Total:</span> <strong>${this.totalPrice}</strong></div>
+<div><span>Taxes:</span> <strong>${this.taxes}</strong></div>
+<div><span>Order Total:</span> <strong>${(this.totalPrice + this.taxes).toFixed(2)}</strong></div>
 </div>
 <div>
 <p>Thank you again for choosing Graphic Groove. We appreciate your business and hope you enjoy your purchase!\n\nBest Regards,\n\nGraphic Groove</p>
