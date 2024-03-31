@@ -187,7 +187,7 @@ cursor: default;
 <div>
 <div><img src="#"/></div>
 <div>
-<p>Dear ${userInformation.firstName},\n\nThank you for shopping at Graphic Groove! We're excited to confirm your recent order with us. Below are the details of your purchase:</p>
+<p>Dear ${userInformation.firstName},<br/><br/>Thank you for shopping at Graphic Groove! We're excited to confirm your recent order with us. Below are the details of your purchase:</p>
 <h4>Order confirmation: ${this._id}</h4>
 <h6>Order Date: ${this.created_at}</h6>
 </div>
@@ -212,7 +212,7 @@ ${generateItemRows(this.items)}
 <div><span>Order Total:</span> <strong>${(this.totalPrice + this.taxes).toFixed(2)}</strong></div>
 </div>
 <div>
-<p>Thank you again for choosing Graphic Groove. We appreciate your business and hope you enjoy your purchase!\n\nBest Regards,\n\nGraphic Groove</p>
+<p>Thank you again for choosing Graphic Groove. We appreciate your business and hope you enjoy your purchase!<br/>Best Regards,<br/>Graphic Groove</p>
 </div>
 </div>
 </body>

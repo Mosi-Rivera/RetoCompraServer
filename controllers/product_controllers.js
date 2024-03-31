@@ -67,7 +67,7 @@ module.exports.searchProducts = async (req, res, next) => {
 module.exports.getVariantInfo = async (req, res, next) => {
     try {
         const variantId = req.params.params;
-        const variant = await Variant.findOne({ _id: variantId }).populate('product');
+        const variant = await Variant.findOneAndUpdate({ _id: variantId }, {$inc: {popularityIndex: 1}}).populate('product');
         if (!variant)
             return res.sendStatus(404)
         const id = variant.product._id
