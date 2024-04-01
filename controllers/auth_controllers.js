@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const schema = new passwordValidator();
-const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
+const { generateAccessToken, generateRefreshToken, msLifetimeAccessToken, msLifetimeRefreshToken } = require('../utils/jwt');
 const CryptoJS = require("crypto-js")
 
 schema
@@ -47,11 +47,11 @@ module.exports.registerController = async (req, res, next) => {
         const token = generateAccessToken(newEmail)
         const refreshToken = generateRefreshToken(newEmail)
 
-        res.cookie('token', token, { httpOnly: true, maxAge: 1000 * 60 * 15 })
-        res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 })
+        res.cookie('token', token, { httpOnly: true, maxAge: msLifetimeAccessToken });
+        res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: msLifetimeRefreshToken });
         user.refreshTokens.push({
             token: refreshToken, expiration: new Date(
-                Date.now() + 1000 * 60 * 60 * 24
+                Date.now() + msLifetimeRefreshToken
             )
         })
         await user.save()
@@ -96,7 +96,7 @@ module.exports.loginController = async (req, res, next) => {
         const accessToken = generateAccessToken(email)
         res.cookie("token", accessToken, {
             httpOnly: true,
-            maxAge: 1000 * 60 * 60 * 24,
+            maxAge: msLifetimeAccessToken,
             secure: false,
             signed: false
         })
@@ -104,21 +104,21 @@ module.exports.loginController = async (req, res, next) => {
         const refreshToken = generateRefreshToken(email)
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            maxAge: 1000 * 60 * 60 * 24,
+            maxAge: msLifetimeRefreshToken,
             secure: false,
             signed: false
         })
 
-        const expirationDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
+        const expirationDate = new Date(Date.now() + msLifetimeRefreshToken);
         if (oldRefreshToken)
         {
             user.refreshTokens = user.refreshTokens.filter(({ token }) => token !== oldRefreshToken);
-            user.refreshTokens.push({
-                token: refreshToken,
-                expiration: expirationDate
-            });
-            user.save();
         }
+        user.refreshTokens.push({
+            token: refreshToken,
+            expiration: expirationDate
+        });
+        await user.save();
 
 
         res.status(200).json({
