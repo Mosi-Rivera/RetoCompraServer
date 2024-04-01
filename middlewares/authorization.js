@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require("../models/user")
-const { generateAccessToken, generateRefreshToken } = require("../utils/jwt")
+const { generateAccessToken, generateRefreshToken, msLifetimeRefreshToken, msLifetimeAccessToken } = require("../utils/jwt")
 
 
 
@@ -38,19 +38,19 @@ module.exports.authenticateToken = async (req, res, next) => {
 
             res.cookie("token", newAccessToken, {
                 httpOnly: true,
-                maxAge: 1000 * 60 * 60 * 24,
+                maxAge: msLifetimeAccessToken,
                 secure: false,
                 signed: false
             })
 
             res.cookie("refreshToken", newRefreshToken, {
                 httpOnly: true,
-                maxAge: 1000 * 60 * 60 * 24,
+                maxAge: msLifetimeRefreshToken,
                 secure: false,
                 signed: false
             })
 
-            const expirationDate = new Date(Date.now() + 1000 * 60 * 60 * 24);
+            const expirationDate = new Date(Date.now() + msLifetimeRefreshToken);
             user.refreshTokens = user.refreshTokens.filter(({ token }) => token !== refreshToken);
             user.refreshTokens.push({ token: newRefreshToken, expiration: expirationDate });
             await user.save();
