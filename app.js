@@ -22,15 +22,15 @@ app.use(BodyParser.json());
 app.use(cookieParser());
 app.use(ExpressMongoSanitize());
 
-app.get('/api/crudProductsroutes', async (req, res) => {
-    const body = req.body 
-    console.log(body)
-    res.status(200).json({message: "response from server"})
-    //const product = await model//
+// app.get('/api/crudProductsroutes', async (req, res) => {
+//     const body = req.body 
+//     console.log(body)
+//     res.status(200).json({message: "response from server"})
+//     //const product = await model//
 
-    //need to find({}) - search all
-}
- )
+//     //need to find({}) - search all
+// }
+//  )
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
