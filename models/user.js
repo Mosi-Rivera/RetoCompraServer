@@ -19,7 +19,9 @@ const UserSchema = new mongoose.Schema({
         variant: {type: mongoose.Types.ObjectId, required: true, ref: Variant},
         size: {type: String, enum: sizes.arr, required: true},
         quantity: {type: Number, required: true, min: 1, max: 5, set: function(value){ return value > 5 ? 5 : value; }}
-    }]
+    }],
+    emailVerificationId: {type: String, required: true},
+    emailVerified: {type: Boolean, default: false}
 }, {
         timestamps: true
     }

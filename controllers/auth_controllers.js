@@ -4,8 +4,10 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const schema = new passwordValidator();
+const crypto = require('crypto');
 const { generateAccessToken, generateRefreshToken, msLifetimeAccessToken, msLifetimeRefreshToken } = require('../utils/jwt');
-const CryptoJS = require("crypto-js")
+const CryptoJS = require("crypto-js");
+const { sendVerificationEmail } = require('../utils/mailer');
 
 schema
     .is().min(5)
@@ -37,7 +39,8 @@ module.exports.registerController = async (req, res, next) => {
             firstName,
             lastName,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            emailVerificationId: crypto.randomBytes(20).toString('hex')
         });
 
         const user = await newUser.save();
@@ -55,6 +58,7 @@ module.exports.registerController = async (req, res, next) => {
             )
         })
         await user.save()
+        sendVerificationEmail(newUser, `${req.protocol}://${req.get('host')}`);
 
         res.status(200).json({
             user: {
@@ -167,6 +171,38 @@ module.exports.logoutController = async (req, res, next) => {
             res.clearCookie("refreshToken", { httpOnly: true });
         }
         res.sendStatus(200);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.sendEmailVerification = async (req, res, next) => {
+    try {
+        const email = req.params.email;
+        const user = await User.findOneAndUpdate(
+            {email},
+            {$set: {emailVerificationId:  crypto.randomBytes(20).toString('hex')}},
+            {new: true}
+        );
+        if (!user) {
+            throw new Error('Error: User not found.');
+        }
+        await sendVerificationEmail(user, `${req.protocol}://${req.get('host')}`);
+        res.sendStatus(200);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.verifyEmail = async (req, res, next) => {
+    try {
+        const {_id, verificationId} = req.params;
+        const response = await User.updateOne({_id, emailVerified: false, emailVerificationId: verificationId}, {$set: {emailVerified: true}});
+        if (response.matchedCount === 0) {
+            throw new Error("Error: Invaid user, token or already verified.");
+        }
+        res.sendStatus(200);
+
     } catch (error) {
         res.sendStatus(500) && next(error);
     }

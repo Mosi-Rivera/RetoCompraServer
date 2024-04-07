@@ -12,7 +12,7 @@ module.exports.checkoutController = async (req, res, next) => {
         const addressString = `${streetAddress} ${optionalAddress} ${state} ${city} ${zipCode}`;
         const [order, user] = await Order.handleOrderTransaction(email, addressString);
 
-        sendEmail(email, order.toHTMLOrderConfirmation(user));
+        sendEmail(email, order.toHTMLOrderConfirmation(user), "Order Confirmation");
 
         res.status(200).json(order);
     } catch (error) {

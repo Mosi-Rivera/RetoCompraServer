@@ -8,6 +8,7 @@ const productRoutes = require('./routes/product_routes');
 const cartRoutes = require('./routes/cart_routes');
 const orderRoutes = require('./routes/order_routes');
 const cors = require('cors');
+const { verifyEmail } = require('./controllers/auth_controllers');
 require('dotenv').config();
 const app = express();
 if (!process.env.NODE_ENV) app.use(cors({
@@ -26,6 +27,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/order', orderRoutes);
+
+app.use('/verify/:_id/:verificationId', verifyEmail);
 
 app.use('*', (req, res, next) => {
     res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl + '\nmethod: ' + req.method));
