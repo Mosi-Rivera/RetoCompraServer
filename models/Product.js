@@ -31,13 +31,13 @@ ProductSchema.statics.parseQuery = function(query)
 	return (result);
 }
 
-ProductSchema.pre('remove')  = async(next) =>
+ProductSchema.pre('remove') = async(next) =>
 { try { 
 	await Variant.deleteMany ({ product: this._id});
 	next();
 } catch (eror) {
 	next(eror);
 }
-};
+}
 
 module.exports = mongoose.model('Product', ProductSchema);
