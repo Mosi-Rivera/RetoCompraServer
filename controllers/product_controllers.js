@@ -83,7 +83,7 @@ module.exports.updateCrudProduct = async (req, res, next) => {
     try {
         const  _id = req._id;
         const {name, description, section, brand} = req.body;
-        const user = await Product.findOneAndUdpate(_id, name, description, section, brand);
+        const user = await Product.findByIdAndUpdate({_id},{name, description, section, brand}, {});
         res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -94,7 +94,7 @@ module.exports.removeCrudProduct = async (req, res, next) => {
     try {
         const  _id = req._id;
         const {name, description, section, brand} = req.body;
-        const user = await Product.prodRemove(_id, name, description, section, brand);
+        const user = await Product.findByIdAndDelete({_id},{name, description, section, brand}, {});
         res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -104,7 +104,7 @@ module.exports.removeCrudProduct = async (req, res, next) => {
  module.exports.addCrudProduct = async (req, res, next) => {
     try {
         const {name, description, section, brand} = req.body;
-        const user = await Product.prodAdd( name, description, section, brand);
+        const user = await Product.create({name, description, section, brand});
         res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -115,25 +115,25 @@ module.exports.removeCrudProduct = async (req, res, next) => {
     try {
         const  _id = req._id;
         const {stock,color, price, assets} = req.body;
-        const user = await Variant.varUpdate(_id,stock,color, price, assets);
+        const user = await Variant.findByIdAndUpdate({_id},{udpate: stock,color, price, assets}, {});
         res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
 }
 
-module.exports.removeCrudProducts = async (req, res, next) => {
+module.exports.removeCrudVariant = async (req, res, next) => {
     try {
         const  _id = req._id;
         const {stock,color, price, assets} = req.body;
-        const user = await Variant.varRemove(_id,stock,color, price, assets);
+        const user = await Variant.findByIdAndDelete({_id},{stock,color, price, assets}, {});
         res.status(200).json(user);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
  }
 
- module.exports.addCrudProducts = async (req, res, next) => {
+ module.exports.addCrudVariant = async (req, res, next) => {
     try {
         const {stock,color, price, assets} = req.body;
         const user = await Variant.varAdd( stock,color, price, assets);
