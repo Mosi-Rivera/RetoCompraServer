@@ -83,8 +83,8 @@ module.exports.updateCrudProduct = async (req, res, next) => {
     try {
         const  _id = req.body._id;
         const {name, description, section, brand} = req.body;
-        const Product = await Product.findByIdAndUpdate({_id},{name, description, section, brand}, {});
-        res.status(200).json(user);
+        const product = await Product.findByIdAndUpdate(_id,{name, description, section, brand}, {new:true});
+        res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -93,9 +93,8 @@ module.exports.updateCrudProduct = async (req, res, next) => {
 module.exports.removeCrudProduct = async (req, res, next) => {
     try {
         const  _id = req.product._id;
-        const {name, description, section, brand} = req.body;
-        const Product = await Product.findByIdAndDelete({_id},{name, description, section, brand}, {});
-        res.status(200).json(user);
+        const product = await Product.findByIdAndDelete(_id,{});
+        res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -104,8 +103,10 @@ module.exports.removeCrudProduct = async (req, res, next) => {
  module.exports.addCrudProduct = async (req, res, next) => {
     try {
         const {name, description, section, brand} = req.body;
-        const Product = await Product.create({name, description, section, brand});
-        res.status(200).json(user);
+        console.log(req.body)
+        const product = await Product.create({name, description, section, brand});
+        console.log(product)
+        res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -113,10 +114,10 @@ module.exports.removeCrudProduct = async (req, res, next) => {
 
  module.exports.updateCrudVariant = async (req, res, next) => {
     try {
-        const  _id = req.body_id;
+        const  _id = req.body._id;
         const {stock,color, price, assets} = req.body;
-        const Variant = await Variant.findByIdAndUpdate(_id,{udpate: stock,color, price, assets}, {});
-        res.status(200).json(user);
+        const variant = await Variant.findByIdAndUpdate(_id,{udpate: stock,color, price, assets}, {new:true});
+        res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -125,9 +126,8 @@ module.exports.removeCrudProduct = async (req, res, next) => {
 module.exports.removeCrudVariant = async (req, res, next) => {
     try {
         const  _id = req.body._id;
-        const {stock,color, price, assets} = req.body;
-        const Variant = await Variant.findByIdAndDelete(_id,{stock,color, price, assets}, {});
-        res.status(200).json(user);
+        const variant = await Variant.findByIdAndDelete(_id, {});
+        res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -136,8 +136,8 @@ module.exports.removeCrudVariant = async (req, res, next) => {
  module.exports.addCrudVariant = async (req, res, next) => {
     try {
         const {stock,color, price, assets} = req.body;
-        const Variant = await Variant.varAdd( stock,color, price, assets);
-        res.status(200).json(user);
+        const variant = await Variant.varAdd( stock,color, price, assets);
+        res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
