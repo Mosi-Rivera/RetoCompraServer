@@ -29,34 +29,65 @@ module.exports.searchProducts = async (req, res, next) => {
         const productQuery = Product.parseQuery(req.query);
         const search = req.params.search || "";
         const regex = { $regex: new RegExp(`.*${search.replace(/\s+/g, ".*")}.*`, 'i') };
-
-        productQuery.$or = [
-            { name: regex },
-            { description: regex },
-            { brand: regex },
-            { section: regex }
-        ];
-        const productIds = (await Product.find(productQuery).select({ _id: 1 })).map(({ _id }) => _id);
-
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
-        query.$or = [
-            { product: { $in: productIds } },
-            { color: regex }
+
+        const match = {
+            ...query,
+            $or: [
+                {"product.name": regex},
+                {"product.description": regex},
+                {"product.brand": regex},
+                {"product.section": regex},
+                {color: regex}
+            ]
+        };
+
+        for (const k in productQuery) {
+            match['product.' + k] = productQuery[k];
+        }
+
+        const aggregation = [
+            {
+                $lookup: {
+                    from: "products",
+                    localField: "product",
+                    foreignField: "_id",
+                    as: "product"
+                }
+            },
+            {
+                $unwind: "$product"
+            },
+            {
+                $match: match
+            },
         ];
 
-        const [products, count] = await Promise.all([
-            Variant.find({
-                ...query
-            }).sort(sort || {}).skip(skip).limit(limit).populate("product", "brand name").select({
-                _id: 1,
-                'assets.thumbnail': 1,
-                name: 1,
-                price: 1,
-                color: 1
-            }),
-            Variant.countDocuments(query)
-        ]);
-        res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count });
+        if (sort) {
+            aggregation.push({$sort: sort});
+        }
+        aggregation.push(
+            {
+                $group: {
+                    _id: null,
+                    count: {$sum: 1},
+                    products: {$push: "$$ROOT"}
+                }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            }
+        );
+
+        const [data] = await Variant.aggregate(aggregation);
+        if (!data) { //JUST IN CASE; ITS A FEATURE!!;
+            return res.status(200).json({products: [], pages: 0, productCount: 0});
+        }
+
+        res.status(200).json({ products: data.products, pages: Math.ceil(data.count / limit), productCount: data.count });
     }
     catch (err) {
         res.sendStatus(500) && next(err);
@@ -75,6 +106,6 @@ module.exports.getVariantInfo = async (req, res, next) => {
         res.status(200).json({ variant, colors })
 
     } catch (error) {
-        res.sendStatus(500)
+        res.sendStatus(500) && next(error);
     }
 }
