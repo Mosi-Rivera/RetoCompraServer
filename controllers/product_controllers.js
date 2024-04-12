@@ -109,3 +109,79 @@ module.exports.getVariantInfo = async (req, res, next) => {
         res.sendStatus(500) && next(error);
     }
 }
+
+module.exports.updateCrudProduct = async (req, res, next) => {
+    try {
+        const  _id = req.body._id;
+        const {name, description, section, brand} = req.body;
+        const product = await Product.findByIdAndUpdate(_id,{name, description, section, brand}, {new:true});
+        res.status(200).json(product);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.removeCrudProduct = async (req, res, next) => {
+    try {
+        const  _id = req.product._id;
+        const product = await Product.findByIdAndDelete(_id,{});
+        res.status(200).json(product);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+ }
+
+ module.exports.addCrudProduct = async (req, res, next) => {
+    try {
+        const {name, description, section, brand} = req.body;
+        console.log(req.body)
+        const product = await Product.create({name, description, section, brand});
+        console.log(product)
+        res.status(200).json(product);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+ }
+
+ module.exports.updateCrudVariant = async (req, res, next) => {
+    try {
+        const  _id = req.body._id;
+        const {xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
+        const variant = await Variant.findByIdAndUpdate(_id,{$set:{
+            "stock.XS.stock": xsStock,
+            "stock.S.stock": sStock,
+            "stock.M.stock": mStock,
+            "stock.L.stock": lStock,
+            "stock.XL.stock": xlStock,
+            color, price, assets}}, {new:true});
+        res.status(200).json(variant);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.removeCrudVariant = async (req, res, next) => {
+    try {
+        const  _id = req.body._id;
+        const variant = await Variant.findByIdAndDelete(_id, {});
+        res.status(200).json(variant);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+ }
+
+ module.exports.addCrudVariant = async (req, res, next) => {
+    try {
+        const {xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
+        const variant = await Variant.Create({
+            "stock.XS.stock": xsStock,
+            "stock.S.stock": sStock,
+            "stock.M.stock": mStock,
+            "stock.L.stock": lStock,
+            "stock.XL.stock": xlStock},
+            color, price, assets);
+        res.status(200).json(variant);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+ }
