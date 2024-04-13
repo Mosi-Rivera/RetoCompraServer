@@ -154,7 +154,11 @@ module.exports.removeCrudProduct = async (req, res, next) => {
             "stock.L.stock": lStock || 0,
             "stock.XL.stock": xlStock || 0},
             $set:{
-            color, price, assets}}, {new:true});
+            color, "price.value" : price, 
+            assets:{thumbnail: assets, images:[assets]},
+        }},
+             
+            {new:true});
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -173,7 +177,7 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 
  module.exports.addCrudVariant = async (req, res, next) => {
     try {
-        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
+        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, size, price, assets} = req.body;
         const variant = await Variant.Create({
             "product": new mongoose.Types.ObjectId(_id),
             "stock.XS.stock": xsStock,
@@ -181,7 +185,11 @@ module.exports.removeCrudVariant = async (req, res, next) => {
             "stock.M.stock": mStock,
             "stock.L.stock": lStock,
             "stock.XL.stock": xlStock,
-            color, "price.value" : price, assets:{thumbnail: assets, images:[assets] }});
+            color,
+            "stock.size": size,
+            "price.value" : price, 
+            assets:{thumbnail: assets, images:[assets] }
+        });
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
