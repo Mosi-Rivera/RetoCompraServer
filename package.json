@@ -20,13 +20,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon ./app.js",
-    "nvim": "find ./ -type f -name \"*.js\" ! -path \"*/node_modules/*\" -exec nvim {} +"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "nodemon": "^3.0.3"
-  }
+      "nvim": "find ./ -type f -name \"*.js\" ! -path \"*/node_modules/*\" -exec nvim {} +"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "devDependencies": {
+      "nodemon": "^3.0.3"
+    }
 }

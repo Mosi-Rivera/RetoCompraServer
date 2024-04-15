@@ -28,34 +28,65 @@ module.exports.searchProducts = async (req, res, next) => {
         const productQuery = Product.parseQuery(req.query);
         const search = req.params.search || "";
         const regex = { $regex: new RegExp(`.*${search.replace(/\s+/g, ".*")}.*`, 'i') };
-
-        productQuery.$or = [
-            { name: regex },
-            { description: regex },
-            { brand: regex },
-            { section: regex }
-        ];
-        const productIds = (await Product.find(productQuery).select({ _id: 1 })).map(({ _id }) => _id);
-
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
-        query.$or = [
-            { product: { $in: productIds } },
-            { color: regex }
+
+        const match = {
+            ...query,
+            $or: [
+                { "product.name": regex },
+                { "product.description": regex },
+                { "product.brand": regex },
+                { "product.section": regex },
+                { color: regex }
+            ]
+        };
+
+        for (const k in productQuery) {
+            match['product.' + k] = productQuery[k];
+        }
+
+        const aggregation = [
+            {
+                $lookup: {
+                    from: "products",
+                    localField: "product",
+                    foreignField: "_id",
+                    as: "product"
+                }
+            },
+            {
+                $unwind: "$product"
+            },
+            {
+                $match: match
+            },
         ];
 
-        const [products, count] = await Promise.all([
-            Variant.find({
-                ...query
-            }).sort(sort || {}).skip(skip).limit(limit).populate("product", "brand name").select({
-                _id: 1,
-                'assets.thumbnail': 1,
-                name: 1,
-                price: 1,
-                color: 1
-            }),
-            Variant.countDocuments(query)
-        ]);
-        res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count });
+        if (sort) {
+            aggregation.push({ $sort: sort });
+        }
+        aggregation.push(
+            {
+                $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    products: { $push: "$$ROOT" }
+                }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            }
+        );
+
+        const [data] = await Variant.aggregate(aggregation);
+        if (!data) { //JUST IN CASE; ITS A FEATURE!!;
+            return res.status(200).json({ products: [], pages: 0, productCount: 0 });
+        }
+
+        res.status(200).json({ products: data.products, pages: Math.ceil(data.count / limit), productCount: data.count });
     }
     catch (err) {
         res.sendStatus(500) && next(err);
@@ -74,10 +105,9 @@ module.exports.getVariantInfo = async (req, res, next) => {
         res.status(200).json({ variant, colors })
 
     } catch (error) {
-        res.sendStatus(500)
+        res.sendStatus(500) && next(error);
     }
 }
-
 
 module.exports.getAllProducts = async (req, res, next) => {
     try {
@@ -88,9 +118,90 @@ module.exports.getAllProducts = async (req, res, next) => {
         const skip = (page - 1) * limit;
 
         const [products, count] = await Promise.all([Variant.find({}).sort({ section: 1 }).skip(skip).limit(limit).populate('product'), Variant.countDocuments()]);
-        console.log(count)
         res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count })
     } catch (error) {
         res.sendStatus(500)
     }
 }
+
+
+module.exports.updateCrudProduct = async (req, res, next) => {
+    try {
+        const _id = req.body._id;
+        const { name, description, section, brand } = req.body;
+        const product = await Product.findByIdAndUpdate(_id, { name, description, section, brand }, { new: true });
+        res.status(200).json(product);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.removeCrudProduct = async (req, res, next) => {
+    try {
+        const _id = req.product._id;
+        const product = await Product.findByIdAndDelete(_id, {});
+        res.status(200).json(product);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.addCrudProduct = async (req, res, next) => {
+    try {
+        const { name, description, section, brand } = req.body;
+        console.log(req.body)
+        const product = await Product.create({ name, description, section, brand });
+        console.log(product)
+        res.status(200).json(product);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.updateCrudVariant = async (req, res, next) => {
+    try {
+        const _id = req.body._id;
+        const { xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
+        const variant = await Variant.findByIdAndUpdate(_id, {
+            $set: {
+                "stock.XS.stock": xsStock,
+                "stock.S.stock": sStock,
+                "stock.M.stock": mStock,
+                "stock.L.stock": lStock,
+                "stock.XL.stock": xlStock,
+                color, price, assets
+            }
+        }, { new: true });
+        res.status(200).json(variant);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.removeCrudVariant = async (req, res, next) => {
+    try {
+        const _id = req.body._id;
+        const variant = await Variant.findByIdAndDelete(_id, {});
+        res.status(200).json(variant);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.addCrudVariant = async (req, res, next) => {
+    try {
+        const { xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
+        const variant = await Variant.Create({
+            "stock.XS.stock": xsStock,
+            "stock.S.stock": sStock,
+            "stock.M.stock": mStock,
+            "stock.L.stock": lStock,
+            "stock.XL.stock": xlStock
+        },
+            color, price, assets);
+        res.status(200).json(variant);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+

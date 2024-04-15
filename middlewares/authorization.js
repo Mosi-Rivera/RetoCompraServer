@@ -13,6 +13,7 @@ module.exports.authenticateToken = async (req, res, next) => {
         const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userEmail = payload.email;
         req.email = userEmail;
+        req.userRole = payload.role;
         return next();
     } catch (error) {
         try {
@@ -32,7 +33,7 @@ module.exports.authenticateToken = async (req, res, next) => {
             //     "email": user.email,
             // "role":user.role
             // }
-            const newAccessToken = generateAccessToken(payload)
+            const newAccessToken = generateAccessToken(payload, user.role)
             const newRefreshToken = generateRefreshToken(payload)
 
 
@@ -55,6 +56,7 @@ module.exports.authenticateToken = async (req, res, next) => {
             user.refreshTokens.push({ token: newRefreshToken, expiration: expirationDate });
             await user.save();
             req.email = email;
+            req.userRole = user.role;
             return next();
         } catch (error) {
             res.sendStatus(401) && next(error);

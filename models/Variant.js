@@ -39,8 +39,8 @@ VariantSchema.statics.parseSort = (sort) => {
 	{
 		case NEW: sort = {createdAt: -1}; break;
 		case POPULAR: sort = {popularityIndex: -1}; break;
-		case LOW: sort = {price: 1}; break;
-		case HIGH: sort = {price: -1}; break;
+		case LOW: sort = {'price.value': 1}; break;
+		case HIGH: sort = {'price.value': -1}; break;
 		default: sort = null;
 	}
 	return sort;
