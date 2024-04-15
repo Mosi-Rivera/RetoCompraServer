@@ -8,7 +8,6 @@ module.exports.getProducts = async (req, res, next) => {
 
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
         query.product = { $in: productIds };
-
         const [products, count] = await Promise.all([
             Variant.find(query).sort(sort || {}).skip(skip).limit(limit).populate('product', 'brand name').select({
                 _id: 1,
@@ -82,10 +81,15 @@ module.exports.getVariantInfo = async (req, res, next) => {
 
 module.exports.getAllProducts = async (req, res, next) => {
     try {
-        // const arr = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        const { page, limit } = req.query
-        const products = await Variant.find({}).populate('product')
-        res.status(200).json({ products })
+        // const [query, skip, limit, sort] = Variant.parseQuery(req.query)
+
+        const page = parseInt(req.query.page)
+        const limit = parseInt(req.query.limit)
+        const skip = (page - 1) * limit;
+
+        const [products, count] = await Promise.all([Variant.find({}).sort({ section: 1 }).skip(skip).limit(limit).populate('product'), Variant.countDocuments()]);
+        console.log(count)
+        res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count })
     } catch (error) {
         res.sendStatus(500)
     }
