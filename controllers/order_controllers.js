@@ -6,6 +6,9 @@ module.exports.checkoutController = async (req, res, next) => {
     try {
         const { streetAddress, optionalAddress, state, city, zipCode } = req.body;
         const email = req.email;
+        if (!await User.findOne({email, emailVerified: true})) {
+            return res.status(403).json({field: "server", error: "Email is not verified."});
+        }
         if (!streetAddress || !state || !city || !zipCode) {
             return res.status(403).json({ field: 'server', error: 'Please fill all required fields.' }) && next(new Error('Missing address fields.'));
         }

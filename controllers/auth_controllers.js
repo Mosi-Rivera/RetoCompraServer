@@ -58,7 +58,7 @@ module.exports.registerController = async (req, res, next) => {
             )
         })
         await user.save()
-        sendVerificationEmail(newUser, `${req.protocol}://${req.get('host')}`);
+        sendVerificationEmail(user, process.env.NODE_ENV ?`${req.protocol}://${req.get('host')}` : "http://localhost:5173");
 
         res.status(200).json({
             user: {
@@ -66,7 +66,9 @@ module.exports.registerController = async (req, res, next) => {
                 lastName: user.lastName,
                 email: user.lastName,
                 role: user.role,
-                _id: user._id
+                _id: user._id,
+                cart: user.cart,
+                emailVerified: user.emailVerified
             }
         });
     }
@@ -132,7 +134,8 @@ module.exports.loginController = async (req, res, next) => {
                 email: user.email,
                 role: user.role,
                 _id: user._id,
-                cart: user.cart
+                cart: user.cart,
+                emailVerified: user.emailVerified
             }
         })
     } catch (error) {
@@ -153,7 +156,8 @@ module.exports.whoAmIController = async (req, res, next) => {
                 lastName: user.lastName,
                 email: user.email,
                 role: user.role,
-                cart: user.cart
+                cart: user.cart,
+                emailVerified: user.emailVerified
             }
         });
     } catch (error) {
@@ -187,7 +191,8 @@ module.exports.sendEmailVerification = async (req, res, next) => {
         if (!user) {
             throw new Error('Error: User not found.');
         }
-        await sendVerificationEmail(user, `${req.protocol}://${req.get('host')}`);
+        await sendVerificationEmail(user, process.env.NODE_ENV ?`${req.protocol}://${req.get('host')}` : "http://localhost:5173");
+console.log();
         res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -196,8 +201,8 @@ module.exports.sendEmailVerification = async (req, res, next) => {
 
 module.exports.verifyEmail = async (req, res, next) => {
     try {
-        const {_id, verificationId} = req.params;
-        const response = await User.updateOne({_id, emailVerified: false, emailVerificationId: verificationId}, {$set: {emailVerified: true}});
+        const {userId, validationCode} = req.params;
+        const response = await User.updateOne({_id: userId, emailVerified: false, emailVerificationId: validationCode}, {$set: {emailVerified: true}});
         if (response.matchedCount === 0) {
             throw new Error("Error: Invaid user, token or already verified.");
         }

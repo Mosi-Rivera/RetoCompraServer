@@ -38,8 +38,6 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/order', orderRoutes);
 
-app.use('/verify/:_id/:verificationId', verifyEmail);
-
 app.use('*', (req, res, next) => {
     res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl + '\nmethod: ' + req.method));
 });
