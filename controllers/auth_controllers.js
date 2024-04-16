@@ -47,7 +47,7 @@ module.exports.registerController = async (req, res, next) => {
 
         const newEmail = user.email
 
-        const token = generateAccessToken(newEmail)
+        const token = generateAccessToken(newEmail, newUser.role)
         const refreshToken = generateRefreshToken(newEmail)
 
         res.cookie('token', token, { httpOnly: true, maxAge: msLifetimeAccessToken });
@@ -97,7 +97,7 @@ module.exports.loginController = async (req, res, next) => {
         if (!validPassword) {
             return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" }) && next(new Error('Password does not match.'));
         }
-        const accessToken = generateAccessToken(email)
+        const accessToken = generateAccessToken(email, user.role)
         res.cookie("token", accessToken, {
             httpOnly: true,
             maxAge: msLifetimeAccessToken,

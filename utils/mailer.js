@@ -4,7 +4,7 @@ const { wrapWithEmailHTML } = require('./emailHTML');
 const transporter = nodemailer.createTransport({
     host: "smtp.ethereal.email",
     port: 587,
-    secure: false, // Use `true` for port 465, `false` for all other ports
+    // secure: false, // Use `true` for port 465, `false` for all other ports
     auth: {
         user: "grayce0@ethereal.email",
         pass: "8Yw4Eh5tbNz6WmtmB7",

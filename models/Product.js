@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const sectionsConstants = require('../constants/section');
+const Variant = require('./Variant');
 const ProductSchema = new mongoose.Schema({
 	name: {type: String, required: true},
 	description: {type: String, required: true},
@@ -30,4 +31,15 @@ ProductSchema.statics.parseQuery = function(query)
 	return (result);
 }
 
+ProductSchema.pre('remove', async(next) =>
+{ try { 
+	await Variant.deleteMany ({ product: this._id});
+	next();
+} catch (eror) {
+	next(eror);
+}
+})  
+
 module.exports = mongoose.model('Product', ProductSchema);
+
+//pending delete method (logical removal); product ID to be diable or hidden but not actually deleted

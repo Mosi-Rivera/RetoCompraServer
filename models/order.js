@@ -122,8 +122,8 @@ orderSchema.methods.toHTMLOrderConfirmation = function (userInformation) {
 ${generateItemRows(this.items)}
 </table>
 <div>
-<div><span>Sub Total:</span> <strong>${this.totalPrice}</strong></div>
-<div><span>Taxes:</span> <strong>${this.taxes}</strong></div>
+<div><span>Subtotal:</span> <strong>${this.totalPrice}</strong></div>
+<div><span>Tax:</span> <strong>${this.taxes}</strong></div>
 <div><span>Order Total:</span> <strong>${(this.totalPrice + this.taxes).toFixed(2)}</strong></div>
 </div>
 <div>
