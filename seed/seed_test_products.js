@@ -1,7 +1,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const ChangeLog = require('../models/change_log');
 const Product = require('../models/Product');
 const Variant = require('../models/Variant');
+const User = require('../models/user');
 const {USD} = require('../constants/currency').obj;
 const sections = require('../constants/section').arr;
 const sizes = require('../constants/size').arr;
@@ -28,7 +30,13 @@ const atoi = (str, def = 10) => {
 (async () => {
     try
     {
-        mongoose.connect(process.env.DB_URI);
+        await mongoose.connect(process.env.DB_URI);
+
+        const admin = await User.findOne({role: 'admin'});
+        if (!admin) {
+            return console.log("Err: No admin user found.\n\tPlease create one and try again.");
+        }
+
         if (await Product.estimatedDocumentCount() !== 0 || await Variant.estimatedDocumentCount() !== 0)
         {
             return console.log(`Err: Collection is not empty!
@@ -38,6 +46,7 @@ const atoi = (str, def = 10) => {
         }
         const products = [];
         const variants = [];
+        let changeLogs = [];
         let productCount = atoi(process.argv[2], 10);
         let variantCount = atoi(process.argv[3], 5);
         for (let i = productCount; i--;)
@@ -48,6 +57,8 @@ const atoi = (str, def = 10) => {
                 brand: brands[i % brands.length]
             });
         const productDocuments = await Product.insertMany(products);
+        productDocuments.forEach(product => changeLogs.push(ChangeLog.productCreate(admin._id, product)));
+        await Promise.all(changeLogs);
         for (let i = productDocuments.length; i--;)
         {
             const {_id, name, brand, section} = productDocuments[i];
@@ -97,7 +108,10 @@ const atoi = (str, def = 10) => {
                 });
             }
         }
-        await Variant.insertMany(variants);
+        changeLogs = [];
+        (await Variant.insertMany(variants))
+            .forEach(variant => changeLogs.push(ChangeLog.variantCreate(admin._id, variant)));
+        await Promise.all(changeLogs);
         console.log('PRODUCTS SEEDED!');
     }
     catch(err)
