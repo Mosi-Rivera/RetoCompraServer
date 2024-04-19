@@ -1,24 +1,25 @@
+const Variant = require('../models/Variant');
 const ChangeLog = require("../models/change_log");
-const { parseInputStrToInt } = require("../utils/input");
 
 module.exports.getChanglogsController = async (req, res, next) => {
     try {
-        let {documentType, documentId, userId, page, limit} = req.query;
-        page = parseInputStrToInt(page, 1);
-        limit = parseInputStrToInt(limit, 20);
-        const skip = (page - 1) * limit;
+        const {documentType, documentId} = req.query;
+        delete req.query.documentType;
+        delete req.query.documentId;
 
-        const queryObj = {};
+        const [query, skip, limit, sort] = Variant.parseQuery(req.query);
         if (documentType) {
-                queryObj[documentType] = documentId || {$exists: true};
-        }
-        if (userId) {
-            queryObj.userId = userId;
+                query[documentType] = documentId || {$exists: true};
         }
 
         const [logs, count] = await Promise.all([
-            ChangeLog.find(queryObj).skip(skip).limit(limit),
-            ChangeLog.estimatedDocumentCount(queryObj)
+            ChangeLog.find(query).skip(skip).limit(limit).sort(sort || {})
+            .populate('userId', 'email role _id')
+            .populate('product', '_id name section brand')
+            .populate('variant', '_id product')
+            .populate('user', '_id email role')
+            .populate('order', '_id'),
+            ChangeLog.estimatedDocumentCount(query)
         ]);
 
         res.status(200).json({logs, pages: Math.ceil(count / limit), count});
