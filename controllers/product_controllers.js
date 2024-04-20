@@ -138,8 +138,10 @@ module.exports.updateCrudProduct = async (req, res, next) => {
 
 module.exports.removeCrudProduct = async (req, res, next) => {
     try {
-        const _id = req.product._id;
-        const product = await Product.findByIdAndDelete(_id, {});
+        const  _id = req.product._id;
+        const product = await Product.findByIdAndDelete(_id,{});
+        await Variant.deleteMany({product: _id})
+
         res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -160,18 +162,24 @@ module.exports.addCrudProduct = async (req, res, next) => {
 
 module.exports.updateCrudVariant = async (req, res, next) => {
     try {
-        const _id = req.body._id;
-        const { xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
-        const variant = await Variant.findByIdAndUpdate(_id, {
-            $set: {
-                "stock.XS.stock": xsStock,
-                "stock.S.stock": sStock,
-                "stock.M.stock": mStock,
-                "stock.L.stock": lStock,
-                "stock.XL.stock": xlStock,
-                color, price, assets
-            }
-        }, { new: true });
+
+        const  _id = req.body._id;
+        const {xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
+        const variant = await Variant.findByIdAndUpdate(_id,{$inc:
+            {"stock.XS.stock": xsStock || 0,
+            "stock.S.stock": sStock || 0 ,
+            "stock.M.stock": mStock || 0,
+            "stock.L.stock": lStock || 0,
+            "stock.XL.stock": xlStock || 0},
+            $set:{
+            color, "price.value" : price, 
+            assets:{thumbnail: assets, images:[assets]},
+        }},
+             
+        // Pending logic for save photo in cloudinary --> url --> update al documento creado
+
+            {new:true});
+
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -190,15 +198,21 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 
 module.exports.addCrudVariant = async (req, res, next) => {
     try {
-        const { xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
+        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
+
         const variant = await Variant.Create({
+            "product": new mongoose.Types.ObjectId(_id),
             "stock.XS.stock": xsStock,
             "stock.S.stock": sStock,
             "stock.M.stock": mStock,
             "stock.L.stock": lStock,
-            "stock.XL.stock": xlStock
-        },
-            color, price, assets);
+
+            "stock.XL.stock": xlStock,
+            color,
+            "price.value" : price, 
+            assets:{thumbnail: assets, images:[assets] }
+        });
+
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
