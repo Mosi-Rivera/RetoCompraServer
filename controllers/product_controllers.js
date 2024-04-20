@@ -125,6 +125,7 @@ module.exports.removeCrudProduct = async (req, res, next) => {
     try {
         const  _id = req.product._id;
         const product = await Product.findByIdAndDelete(_id,{});
+        await Variant.deleteMany({product: _id})
         res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -158,6 +159,8 @@ module.exports.removeCrudProduct = async (req, res, next) => {
             assets:{thumbnail: assets, images:[assets]},
         }},
              
+        // Pending logic for save photo in cloudinary --> url --> update al documento creado
+
             {new:true});
         res.status(200).json(variant);
     } catch (error) {
@@ -177,7 +180,7 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 
  module.exports.addCrudVariant = async (req, res, next) => {
     try {
-        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, size, price, assets} = req.body;
+        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
         const variant = await Variant.Create({
             "product": new mongoose.Types.ObjectId(_id),
             "stock.XS.stock": xsStock,
@@ -186,7 +189,6 @@ module.exports.removeCrudVariant = async (req, res, next) => {
             "stock.L.stock": lStock,
             "stock.XL.stock": xlStock,
             color,
-            "stock.size": size,
             "price.value" : price, 
             assets:{thumbnail: assets, images:[assets] }
         });
