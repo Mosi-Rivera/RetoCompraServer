@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth_route')
 const productRoutes = require('./routes/product_routes');
 const cartRoutes = require('./routes/cart_routes');
 const orderRoutes = require('./routes/order_routes');
+const changelogRoutes = require('./routes/change_logs_routes');
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/order', orderRoutes);
+app.use('/api/changelogs', changelogRoutes);
 
 app.use('*', (req, res, next) => {
     res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl + '\nmethod: ' + req.method));
