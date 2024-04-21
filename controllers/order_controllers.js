@@ -20,22 +20,3 @@ module.exports.checkoutController = async (req, res, next) => {
         res.sendStatus(500) && next(error);
     }
 }
-
-
-module.exports.confirmationController = async (req, res, next) => {
-    try {
-        const email = req.email
-
-
-        const user = await Order.handleOrderTransaction(email);
-        console.log(user)
-        // .populate('product', 'brand name').select({
-        //     _id: 1,
-        //     'assets.thumbnail': 1,
-        //     price: 1
-        // }),
-        res.status(200).json({ messeage: "hello" })
-    } catch (error) {
-        console.log(error)
-    }
-}
