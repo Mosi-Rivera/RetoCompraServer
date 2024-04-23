@@ -4,23 +4,108 @@ const Product = require("../models/Product");
 module.exports.getProducts = async (req, res, next) => {
     try {
         const productQuery = Product.parseQuery(req.query);
-        const productIds = (await Product.find(productQuery).select({ _id: 1 })).map(({ _id }) => _id);
+        let [variantQuery, skip, limit, sort] = Variant.parseQuery(req.query);
+        if (sort) {
+            const tmpSort = {};
+            for (const k in sort) {
+                tmpSort['variants.' + k] = sort[k];
+            }
+            sort = tmpSort;
+        }
 
-        const [query, skip, limit, sort] = Variant.parseQuery(req.query);
-        query.product = { $in: productIds };
-        const [products, count] = await Promise.all([
-            Variant.find(query).sort(sort || {}).skip(skip).limit(limit).populate('product', 'brand name').select({
-                _id: 1,
-                'assets.thumbnail': 1,
-                price: 1
-            }),
-            Variant.countDocuments(query)
-        ]);
+        const pipeline = [
+            {
+                $match: productQuery
+            },
+            {
+                $lookup: {
+                    from: "variants",
+                    let: { productId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                ...variantQuery,
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$product", "$$productId"] }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: "products",
+                                localField: "product",
+                                foreignField: "_id",
+                                as: "product"
+                            }
+                        },
+                        { $unwind: "$product" },
+                        {
+                            $project: {
+                                _id: 1,
+                                product: {
+                                    _id: "$product._id",
+                                    name: "$product.name",
+                                    brand: "$product.brand",
+                                    section: "$product.section"
+                                },
+                                "assets.thumbnail": 1,
+                                price: 1
+                            }
+                        }
+                    ],
+                    as: "variants"
+                }
+            },
+            { $unwind: "$variants" },
+            { $sort: sort || {'variants.popularity_index': -1}},
+            {
+                $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    variants: { $push: "$variants" },
+                    sortedVariants: {$push: "$sortedVariants"}
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    count: 1,
+                    variants: { $slice: ["$variants", skip, limit] },
+                    sortedVariants: 1
+                }
+            }
+        ];
+
+        const result = await Product.aggregate(pipeline);
+
+        const [{ variants: products, count }] = result;
+
         res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count });
     }
     catch (err) {
         res.sendStatus(500) && next(err);
     }
+    // try {
+    //     const productQuery = Product.parseQuery(req.query);
+    //     const productIds = (await Product.find(productQuery).select({ _id: 1 })).map(({ _id }) => _id);
+    //
+    //     const [query, skip, limit, sort] = Variant.parseQuery(req.query);
+    //     query.product = { $in: productIds };
+    //     const [products, count] = await Promise.all([
+    //         Variant.find(query).sort(sort || {}).skip(skip).limit(limit).populate('product', 'brand name').select({
+    //             _id: 1,
+    //             'assets.thumbnail': 1,
+    //             price: 1
+    //         }),
+    //         Variant.countDocuments(query)
+    //     ]);
+    //     res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count });
+    // }
+    // catch (err) {
+    //     res.sendStatus(500) && next(err);
+    // }
 }
 
 module.exports.searchProducts = async (req, res, next) => {
@@ -99,7 +184,7 @@ module.exports.getVariantInfo = async (req, res, next) => {
         const variantId = req.params.params;
         const variant = await Variant.findOneAndUpdate({ _id: variantId }, { $inc: { popularityIndex: 1 } }).populate('product');
         if (!variant)
-            return res.sendStatus(404)
+        return res.sendStatus(404)
         const id = variant.product._id
         const colors = await Variant.find({ product: id, _id: { $ne: variant._id } }).select({ color: 1, _id: 1, 'assets.thumbnail': 1 })
         res.status(200).json({ variant, colors })
@@ -151,9 +236,7 @@ module.exports.removeCrudProduct = async (req, res, next) => {
 module.exports.addCrudProduct = async (req, res, next) => {
     try {
         const { name, description, section, brand } = req.body;
-        console.log(req.body)
         const product = await Product.create({ name, description, section, brand });
-        console.log(product)
         res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -167,16 +250,16 @@ module.exports.updateCrudVariant = async (req, res, next) => {
         const {xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
         const variant = await Variant.findByIdAndUpdate(_id,{$inc:
             {"stock.XS.stock": xsStock || 0,
-            "stock.S.stock": sStock || 0 ,
-            "stock.M.stock": mStock || 0,
-            "stock.L.stock": lStock || 0,
-            "stock.XL.stock": xlStock || 0},
+                "stock.S.stock": sStock || 0 ,
+                "stock.M.stock": mStock || 0,
+                "stock.L.stock": lStock || 0,
+                "stock.XL.stock": xlStock || 0},
             $set:{
-            color, "price.value" : price, 
-            assets:{thumbnail: assets, images:[assets]},
-        }},
-             
-        // Pending logic for save photo in cloudinary --> url --> update al documento creado
+                color, "price.value" : price, 
+                assets:{thumbnail: assets, images:[assets]},
+            }},
+
+            // Pending logic for save photo in cloudinary --> url --> update al documento creado
 
             {new:true});
 
