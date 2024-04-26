@@ -3,10 +3,11 @@ const { parseInputStrToInt } = require('../utils/input');
 
 module.exports.getUsers = async (req, res, next) => {
     try {
-        let {limit, page, sort} = req.query;
+        let {limit, page, sort, email} = req.query;
         delete req.query.limit;
         delete req.query.page;
         delete req.query.sort;
+        delete req.query.email;
         limit = parseInputStrToInt(limit, 25);
         page = parseInputStrToInt(page, 1);
         page = page <= 0 ? 1 : page;
@@ -16,7 +17,7 @@ module.exports.getUsers = async (req, res, next) => {
             default: sort = {createdAt: -1}; break;
         }
 
-        const [{users, count}] = await User.aggregate([
+        const pipeline = [
             {$match: req.query},
             {$sort: sort || {createdAt: -1}},
             {$project: {
@@ -26,6 +27,13 @@ module.exports.getUsers = async (req, res, next) => {
                 role: 1,
                 createdAt: 1
             }},
+        ];
+        if (email) {
+            pipeline.push({$match: {
+                'email': { $regex: new RegExp(`.*${email.replace(/\s+/g, ".*")}.*`, 'i') }
+            }});
+        }
+        pipeline.push(
             {$group: {
                 _id: null,
                 count: {$sum: 1},
@@ -37,7 +45,13 @@ module.exports.getUsers = async (req, res, next) => {
                     users: {$slice: ["$users", (page - 1) * limit, limit]}
                 }
             }
-        ]);
+        );
+
+        const [result] = await User.aggregate(pipeline);
+        if (!result) {
+            return res.status(200).json({users: [], count: 0, pages: 0});
+        }
+        const {users, count} = result;
         res.status(200).json({users, count, pages: Math.ceil(count / limit)});
     } catch (error) {
         res.sendStatus(500) && next(error);
