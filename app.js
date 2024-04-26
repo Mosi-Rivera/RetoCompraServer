@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');;
 const mongoose = require('mongoose');
 const BodyParser = require('body-parser');
@@ -10,7 +11,6 @@ const orderRoutes = require('./routes/order_routes');
 const changelogRoutes = require('./routes/change_logs_routes');
 const usersRoutes = require('./routes/user_routes');
 const cors = require('cors');
-require('dotenv').config();
 const app = express();
 if (!process.env.NODE_ENV) app.use(cors({
     credentials: true,
@@ -20,7 +20,7 @@ if (!process.env.NODE_ENV) app.use(cors({
 mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017/clothingStore');
 
 app.use(BodyParser.urlencoded({ extended: false }));
-app.use(BodyParser.json());
+app.use(BodyParser.json({limit: "25mb"}));
 app.use(cookieParser());
 app.use(ExpressMongoSanitize());
 
