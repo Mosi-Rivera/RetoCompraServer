@@ -1,5 +1,7 @@
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
+const imageUpload = require("../utils/Imageupload");
+const mongoose = require("mongoose");
 
 module.exports.getProducts = async (req, res, next) => {
     try {
@@ -198,21 +200,27 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 
 module.exports.addCrudVariant = async (req, res, next) => {
     try {
-        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
+        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, price, imageData} = req.body;
+    console.log(imageData)
 
-        const variant = await Variant.Create({
+        const variant = await Variant.create({
             "product": new mongoose.Types.ObjectId(_id),
             "stock.XS.stock": xsStock,
             "stock.S.stock": sStock,
             "stock.M.stock": mStock,
             "stock.L.stock": lStock,
-
             "stock.XL.stock": xlStock,
             color,
             "price.value" : price, 
-            assets:{thumbnail: assets, images:[assets] }
         });
 
+        const imageUrl= await imageUpload(imageData)
+        
+        variant.assets.thumbnail = imageUrl
+        variant.assets.images.push(imageUrl)
+
+        await variant.save()
+        
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
