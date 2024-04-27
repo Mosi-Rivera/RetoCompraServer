@@ -13,15 +13,17 @@ cloudinary.config({
 
   console.log(api_secret);
 
-  const opts = {
-    overwrite: true,
-    invalidate: true,
-    resource_type: "auto",
-  };
-
-  module.exports = (image) => {
+  module.exports = (image, productId, variantId) => {
     //imgage = > base64
     // console.log('Image data:', image);
+    const opts = {
+      overwrite: true,
+      invalidate: true,
+      resource_type: "auto",
+      public_id: variantId,
+      folder: `GraphicGroove/${productId}`
+    };
+
     return new Promise((resolve, reject) => {
       cloudinary.uploader.upload(image, opts, (error, result) => {
         console.log('Cloudinary error:', error);

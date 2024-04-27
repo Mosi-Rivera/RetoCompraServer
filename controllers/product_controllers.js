@@ -166,21 +166,37 @@ module.exports.updateCrudVariant = async (req, res, next) => {
     try {
 
         const  _id = req.body._id;
-        const {xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
-        const variant = await Variant.findByIdAndUpdate(_id,{$inc:
-            {"stock.XS.stock": xsStock || 0,
-            "stock.S.stock": sStock || 0 ,
-            "stock.M.stock": mStock || 0,
-            "stock.L.stock": lStock || 0,
-            "stock.XL.stock": xlStock || 0},
-            $set:{
-            color, "price.value" : price, 
-            assets:{thumbnail: assets, images:[assets]},
-        }},
-             
-        // Pending logic for save photo in cloudinary --> url --> update al documento creado
+        const {xsStock,sStock,mStock,lStock,xlStock,color, price, imageData} = req.body;
+        
+   
+        const updateObject = {$inc: {}, $set:{}}
+        if (xsStock) updateObject.$inc["stock.XS.stock"]= xsStock;
+        if (sStock) updateObject.$inc["stock.S.stock"]= sStock;
+        if (mStock) updateObject.$inc["stock.M.stock"]= mStock;
+        if (lStock) updateObject.$inc["stock.L.stock"]= lStock;
+        if (xlStock) updateObject.$inc["stock.XL.stock"]= xlStock;
+        if (color) updateObject.$set["color"]= color;
+        if (price) updateObject.$set["price.value"]= price;
 
+        console.log(updateObject)
+
+        const variant = await Variant.findByIdAndUpdate(_id, updateObject,        
             {new:true});
+
+            console.log(variant)
+
+         
+            if (!variant) {
+                return (res.sendStatus(404)) && next(new Error("Variant not found"))
+            }  
+
+            const imageUrl= await imageUpload(imageData, variant.product, variant._id )
+        
+            variant.assets.thumbnail = imageUrl
+            variant.assets.images = [imageUrl]
+    
+            await variant.save()
+            
 
         res.status(200).json(variant);
     } catch (error) {
@@ -214,10 +230,10 @@ module.exports.addCrudVariant = async (req, res, next) => {
             "price.value" : price, 
         });
 
-        const imageUrl= await imageUpload(imageData)
+        const imageUrl= await imageUpload(imageData, variant.product, variant._id)
         
         variant.assets.thumbnail = imageUrl
-        variant.assets.images.push(imageUrl)
+        variant.assets.images = [imageUrl]
 
         await variant.save()
         
