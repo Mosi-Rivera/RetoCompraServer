@@ -138,11 +138,12 @@ module.exports.updateCrudProduct = async (req, res, next) => {
 
 module.exports.removeCrudProduct = async (req, res, next) => {
     try {
-        const  _id = req.product._id;
-        const product = await Product.findByIdAndDelete(_id,{});
-        await Variant.deleteMany({product: _id})
+        const _id = req.body._id;
+        console.log(_id)
+        const product = await Product.findByIdAndDelete(_id, {});
+        await Variant.deleteMany({ product: _id })
 
-        res.status(200).json(product);
+        res.status(200).json({ message: "product was deleted", product });
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -163,22 +164,26 @@ module.exports.addCrudProduct = async (req, res, next) => {
 module.exports.updateCrudVariant = async (req, res, next) => {
     try {
 
-        const  _id = req.body._id;
-        const {xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
-        const variant = await Variant.findByIdAndUpdate(_id,{$inc:
-            {"stock.XS.stock": xsStock || 0,
-            "stock.S.stock": sStock || 0 ,
-            "stock.M.stock": mStock || 0,
-            "stock.L.stock": lStock || 0,
-            "stock.XL.stock": xlStock || 0},
-            $set:{
-            color, "price.value" : price, 
-            assets:{thumbnail: assets, images:[assets]},
-        }},
-             
-        // Pending logic for save photo in cloudinary --> url --> update al documento creado
+        const _id = req.body._id;
+        const { xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
+        const variant = await Variant.findByIdAndUpdate(_id, {
+            $inc:
+            {
+                "stock.XS.stock": xsStock || 0,
+                "stock.S.stock": sStock || 0,
+                "stock.M.stock": mStock || 0,
+                "stock.L.stock": lStock || 0,
+                "stock.XL.stock": xlStock || 0
+            },
+            $set: {
+                color, "price.value": price,
+                assets: { thumbnail: assets, images: [assets] },
+            }
+        },
 
-            {new:true});
+            // Pending logic for save photo in cloudinary --> url --> update al documento creado
+
+            { new: true });
 
         res.status(200).json(variant);
     } catch (error) {
@@ -189,8 +194,28 @@ module.exports.updateCrudVariant = async (req, res, next) => {
 module.exports.removeCrudVariant = async (req, res, next) => {
     try {
         const _id = req.body._id;
+        // const size = "stock.XS"
+        // const size = "M"
         const variant = await Variant.findByIdAndDelete(_id, {});
-        res.status(200).json(variant);
+        // const variant = await Variant.findByIdAndUpdate(_id, { $unset: { "stock": "XS" } }, { new: true });
+        // const variant = await Variant.findByIdAndUpdate(
+        //     _id,
+        //     {
+        //         $unset: {
+        //             [`stock.${size}.size`]: " ",
+        //             [`stock.${size}.stock`]: " ",
+        //         }
+        //     },
+
+        //     { new: true });
+        // const variant = await Variant.findByIdAndUpdate(
+        //     _id,
+        //     { $set: { [`stock.${size}.stock`]: 0 } },
+        //     { new: true });
+
+        // const variant = await Variant.findOne({ _id }).select(size);
+        // const variant = await Variant.findOne({ _id })
+        res.status(200).json({ message: `variant with id: ${_id} successfully deleted!` });
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -198,7 +223,7 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 
 module.exports.addCrudVariant = async (req, res, next) => {
     try {
-        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, price, assets} = req.body;
+        const { _id, xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
 
         const variant = await Variant.Create({
             "product": new mongoose.Types.ObjectId(_id),
@@ -209,8 +234,8 @@ module.exports.addCrudVariant = async (req, res, next) => {
 
             "stock.XL.stock": xlStock,
             color,
-            "price.value" : price, 
-            assets:{thumbnail: assets, images:[assets] }
+            "price.value": price,
+            assets: { thumbnail: assets, images: [assets] }
         });
 
         res.status(200).json(variant);
