@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');;
 const mongoose = require('mongoose');
 const BodyParser = require('body-parser');
@@ -8,8 +9,8 @@ const productRoutes = require('./routes/product_routes');
 const cartRoutes = require('./routes/cart_routes');
 const orderRoutes = require('./routes/order_routes');
 const changelogRoutes = require('./routes/change_logs_routes');
+const usersRoutes = require('./routes/user_routes');
 const cors = require('cors');
-require('dotenv').config();
 const app = express();
 if (!process.env.NODE_ENV) app.use(cors({
     credentials: true,
@@ -19,25 +20,16 @@ if (!process.env.NODE_ENV) app.use(cors({
 mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017/clothingStore');
 
 app.use(BodyParser.urlencoded({ extended: false }));
-app.use(BodyParser.json());
+app.use(BodyParser.json({limit: "25mb"}));
 app.use(cookieParser());
 app.use(ExpressMongoSanitize());
-
-// app.get('/api/crudProductsroutes', async (req, res) => {
-//     const body = req.body 
-//     console.log(body)
-//     res.status(200).json({message: "response from server"})
-//     //const product = await model//
-
-//     //need to find({}) - search all
-// }
-//  )
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api/changelogs', changelogRoutes);
+app.use('/api/users', usersRoutes);
 
 app.use('*', (req, res, next) => {
     res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl + '\nmethod: ' + req.method));

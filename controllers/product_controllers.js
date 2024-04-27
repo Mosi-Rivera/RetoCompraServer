@@ -1,5 +1,7 @@
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
+const imageUpload = require("../utils/Imageupload");
+const mongoose = require("mongoose");
 
 module.exports.getProducts = async (req, res, next) => {
     try {
@@ -164,6 +166,7 @@ module.exports.addCrudProduct = async (req, res, next) => {
 module.exports.updateCrudVariant = async (req, res, next) => {
     try {
 
+<<<<<<< HEAD
         const _id = req.body._id;
         const { xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
         const variant = await Variant.findByIdAndUpdate(_id, {
@@ -184,6 +187,40 @@ module.exports.updateCrudVariant = async (req, res, next) => {
             // Pending logic for save photo in cloudinary --> url --> update al documento creado
 
             { new: true });
+=======
+        const  _id = req.body._id;
+        const {xsStock,sStock,mStock,lStock,xlStock,color, price, imageData} = req.body;
+        
+   
+        const updateObject = {$inc: {}, $set:{}}
+        if (xsStock) updateObject.$inc["stock.XS.stock"]= xsStock;
+        if (sStock) updateObject.$inc["stock.S.stock"]= sStock;
+        if (mStock) updateObject.$inc["stock.M.stock"]= mStock;
+        if (lStock) updateObject.$inc["stock.L.stock"]= lStock;
+        if (xlStock) updateObject.$inc["stock.XL.stock"]= xlStock;
+        if (color) updateObject.$set["color"]= color;
+        if (price) updateObject.$set["price.value"]= price;
+
+        console.log(updateObject)
+
+        const variant = await Variant.findByIdAndUpdate(_id, updateObject,        
+            {new:true});
+>>>>>>> develop
+
+            console.log(variant)
+
+         
+            if (!variant) {
+                return (res.sendStatus(404)) && next(new Error("Variant not found"))
+            }  
+
+            const imageUrl= await imageUpload(imageData, variant.product, variant._id )
+        
+            variant.assets.thumbnail = imageUrl
+            variant.assets.images = [imageUrl]
+    
+            await variant.save()
+            
 
         res.status(200).json(variant);
     } catch (error) {
@@ -223,21 +260,36 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 
 module.exports.addCrudVariant = async (req, res, next) => {
     try {
+<<<<<<< HEAD
         const { _id, xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
+=======
+        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, price, imageData} = req.body;
+    console.log(imageData)
+>>>>>>> develop
 
-        const variant = await Variant.Create({
+        const variant = await Variant.create({
             "product": new mongoose.Types.ObjectId(_id),
             "stock.XS.stock": xsStock,
             "stock.S.stock": sStock,
             "stock.M.stock": mStock,
             "stock.L.stock": lStock,
-
             "stock.XL.stock": xlStock,
             color,
+<<<<<<< HEAD
             "price.value": price,
             assets: { thumbnail: assets, images: [assets] }
+=======
+            "price.value" : price, 
+>>>>>>> develop
         });
 
+        const imageUrl= await imageUpload(imageData, variant.product, variant._id)
+        
+        variant.assets.thumbnail = imageUrl
+        variant.assets.images = [imageUrl]
+
+        await variant.save()
+        
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
