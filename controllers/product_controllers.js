@@ -140,11 +140,12 @@ module.exports.updateCrudProduct = async (req, res, next) => {
 
 module.exports.removeCrudProduct = async (req, res, next) => {
     try {
-        const  _id = req.product._id;
-        const product = await Product.findByIdAndDelete(_id,{});
-        await Variant.deleteMany({product: _id})
+        const _id = req.body._id;
+        console.log(_id)
+        const product = await Product.findByIdAndDelete(_id, {});
+        await Variant.deleteMany({ product: _id })
 
-        res.status(200).json(product);
+        res.status(200).json({ message: "product was deleted", product });
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -164,39 +165,37 @@ module.exports.addCrudProduct = async (req, res, next) => {
 
 module.exports.updateCrudVariant = async (req, res, next) => {
     try {
+        const _id = req.body._id;
+        const { xsStock, sStock, mStock, lStock, xlStock, color, price, imageData } = req.body;
 
-        const  _id = req.body._id;
-        const {xsStock,sStock,mStock,lStock,xlStock,color, price, imageData} = req.body;
-        
-   
-        const updateObject = {$inc: {}, $set:{}}
-        if (xsStock) updateObject.$inc["stock.XS.stock"]= xsStock;
-        if (sStock) updateObject.$inc["stock.S.stock"]= sStock;
-        if (mStock) updateObject.$inc["stock.M.stock"]= mStock;
-        if (lStock) updateObject.$inc["stock.L.stock"]= lStock;
-        if (xlStock) updateObject.$inc["stock.XL.stock"]= xlStock;
-        if (color) updateObject.$set["color"]= color;
-        if (price) updateObject.$set["price.value"]= price;
+
+        const updateObject = { $inc: {}, $set: {} }
+        if (xsStock) updateObject.$inc["stock.XS.stock"] = xsStock;
+        if (sStock) updateObject.$inc["stock.S.stock"] = sStock;
+        if (mStock) updateObject.$inc["stock.M.stock"] = mStock;
+        if (lStock) updateObject.$inc["stock.L.stock"] = lStock;
+        if (xlStock) updateObject.$inc["stock.XL.stock"] = xlStock;
+        if (color) updateObject.$set["color"] = color;
+        if (price) updateObject.$set["price.value"] = price;
 
         console.log(updateObject)
 
-        const variant = await Variant.findByIdAndUpdate(_id, updateObject,        
-            {new:true});
+        const variant = await Variant.findByIdAndUpdate(_id, updateObject,
+            { new: true });
 
-            console.log(variant)
+        console.log(variant)
 
-         
-            if (!variant) {
-                return (res.sendStatus(404)) && next(new Error("Variant not found"))
-            }  
+        if (!variant) {
+            return (res.sendStatus(404)) && next(new Error("Variant not found"))
+        }
 
-            const imageUrl= await imageUpload(imageData, variant.product, variant._id )
-        
-            variant.assets.thumbnail = imageUrl
-            variant.assets.images = [imageUrl]
-    
-            await variant.save()
-            
+        const imageUrl = await imageUpload(imageData, variant.product, variant._id)
+
+        variant.assets.thumbnail = imageUrl
+        variant.assets.images = [imageUrl]
+
+        await variant.save()
+
 
         res.status(200).json(variant);
     } catch (error) {
@@ -207,8 +206,15 @@ module.exports.updateCrudVariant = async (req, res, next) => {
 module.exports.removeCrudVariant = async (req, res, next) => {
     try {
         const _id = req.body._id;
+        // const size = "M"
         const variant = await Variant.findByIdAndDelete(_id, {});
-        res.status(200).json(variant);
+
+        // const variant = await Variant.findByIdAndUpdate(
+        //     _id,
+        //     { $set: { [`stock.${size}.stock`]: 0 } },
+        //     { new: true });
+
+        res.status(200).json({ message: `variant with id: ${_id} successfully deleted!` });
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -216,8 +222,8 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 
 module.exports.addCrudVariant = async (req, res, next) => {
     try {
-        const { _id,xsStock,sStock,mStock,lStock,xlStock,color, price, imageData} = req.body;
-    console.log(imageData)
+        const { _id, xsStock, sStock, mStock, lStock, xlStock, color, price, imageData } = req.body;
+        console.log(imageData)
 
         const variant = await Variant.create({
             "product": new mongoose.Types.ObjectId(_id),
@@ -227,16 +233,16 @@ module.exports.addCrudVariant = async (req, res, next) => {
             "stock.L.stock": lStock,
             "stock.XL.stock": xlStock,
             color,
-            "price.value" : price, 
+            "price.value": price,
         });
 
-        const imageUrl= await imageUpload(imageData, variant.product, variant._id)
-        
+        const imageUrl = await imageUpload(imageData, variant.product, variant._id)
+
         variant.assets.thumbnail = imageUrl
         variant.assets.images = [imageUrl]
 
         await variant.save()
-        
+
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
