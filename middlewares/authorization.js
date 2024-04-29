@@ -59,7 +59,7 @@ module.exports.authenticateToken = async (req, res, next) => {
             req.userRole = user.role;
             return next();
         } catch (error) {
-            res.sendStatus(401) && next(error);
+            res.sendStatus(401) /*&& next(error)*/;
         }
     }
 }
