@@ -7,6 +7,16 @@ module.exports.setDeliveryStatusController = async (req, res, next) => {
     try {
         const {order_id, status} = req.body;
         await Order.findByIdAndUpdate(order_id, {$set: {status}});
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.orderModify(
+                user._id,
+                variant._id,
+                {statusSetTo: status}
+            );
+        }
+
         res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);

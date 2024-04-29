@@ -61,7 +61,20 @@ module.exports.getUsers = async (req, res, next) => {
 module.exports.setUserRole = async (req, res, next) => {
     try {
         const {user_id, role} = req.body;
-        await User.findByIdAndUpdate(user_id, {$set: {role}})
+        const user_modified = await User.findByIdAndUpdate(user_id, {$set: {role}})
+        if (!user_modified) {
+            return res.sendStatus(404) && next(new Error('User not found.'));
+        }
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.userModify(
+                user._id,
+                user_modified._id,
+                {roleChangedTo: role}
+            );
+        }
+
         res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);
