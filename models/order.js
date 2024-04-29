@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const sizes = require('../constants/size');
 const Variant = require('./Variant');
 const User = require('../models/user');
+const {arr: status_arr, obj:{PENDING}} = require('../constants/delivery_status');
 
 const orderSchema = new mongoose.Schema(
 	{
@@ -16,7 +17,8 @@ const orderSchema = new mongoose.Schema(
 		}],
 		taxes: { type: Number, required: true },
 		totalPrice: { type: Number, required: true },
-		shippingAddress: { type: String, required: true }
+		shippingAddress: { type: String, required: true },
+		status: { type: String, enum: status_arr, default: PENDING }
 	}, {
 	timestamps: true
 }
