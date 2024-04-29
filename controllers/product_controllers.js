@@ -261,23 +261,23 @@ module.exports.updateCrudVariant = async (req, res, next) => {
         if (color) updateObject.$set["color"] = color;
         if (price) updateObject.$set["price.value"] = price;
 
-        console.log(updateObject)
 
         const variant = await Variant.findByIdAndUpdate(_id, updateObject,
             { new: true });
 
-        console.log(variant)
 
         if (!variant) {
             return (res.sendStatus(404)) && next(new Error("Variant not found"))
         }
 
-        const imageUrl = await imageUpload(imageData, variant.product, variant._id)
+        if (imageData) {
+            const imageUrl = await imageUpload(imageData, variant.product, variant._id)
 
-        variant.assets.thumbnail = imageUrl
-        variant.assets.images = [imageUrl]
+            variant.assets.thumbnail = imageUrl
+            variant.assets.images = [imageUrl]
 
-        await variant.save()
+            await variant.save()
+        }
 
         res.status(200).json(variant);
     } catch (error) {

@@ -3,13 +3,18 @@ const ChangeLog = require("../models/change_log");
 
 module.exports.getChanglogsController = async (req, res, next) => {
     try {
-        const {documentType, documentId} = req.query;
-        delete req.query.documentType;
+        const {documentId} = req.query;
         delete req.query.documentId;
 
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
-        if (documentType) {
-                query[documentType] = documentId || {$exists: true};
+        if (documentId) {
+            query.$or = [
+                {product: documentId},
+                {variant: documentId},
+                {user: documentId},
+                {order: documentId},
+                {userId: documentId},
+            ];
         }
 
         const [logs, count] = await Promise.all([
