@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const ChangeLog = require('../models/change_log');
 const { parseInputStrToInt } = require('../utils/input');
 
 module.exports.getUsers = async (req, res, next) => {

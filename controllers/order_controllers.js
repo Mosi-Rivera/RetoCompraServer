@@ -1,18 +1,22 @@
 const Order = require("../models/order");
 const User = require("../models/user");
+const ChangeLog = require('../models/change_log');
 const { parseInputStrToInt } = require("../utils/input");
 const { sendEmail } = require("../utils/mailer");
 
 module.exports.setDeliveryStatusController = async (req, res, next) => {
     try {
         const {order_id, status} = req.body;
-        await Order.findByIdAndUpdate(order_id, {$set: {status}});
+        const order = await Order.findByIdAndUpdate(order_id, {$set: {status}});
+        if (!order) {
+            return res.sendStatus(404) && next(new Error("Order not found."));
+        }
 
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.orderModify(
                 user._id,
-                variant._id,
+                order._id,
                 {statusSetTo: status}
             );
         }
