@@ -4,18 +4,18 @@ const currencyConstants = require('../constants/currency');
 const Product = require('./Product');
 const {NEW, HIGH, LOW, POPULAR} = require('../constants/sort').obj;
 
-const stockObj = {
-	size: {type: String, required: true, enum: sizesConstants.arr},
+const stockObj = (size)=> ({
+	size: {type: String, required: true, enum: sizesConstants.arr, default: size},
 	stock: {type: Number, required: true, min: [0, 'Quantity cannot be less than zero'], default: 0}
-};
+});
 
 const VariantSchema = new mongoose.Schema({
 	stock: {
-		[sizesConstants.obj.XS]: stockObj,
-		[sizesConstants.obj.S]: stockObj,
-		[sizesConstants.obj.M]: stockObj,
-		[sizesConstants.obj.L]: stockObj,
-		[sizesConstants.obj.XL]: stockObj,
+		[sizesConstants.obj.XS]: stockObj("XS"),
+		[sizesConstants.obj.S]: stockObj("S"),
+		[sizesConstants.obj.M]: stockObj("M"),
+		[sizesConstants.obj.L]: stockObj("L"),
+		[sizesConstants.obj.XL]: stockObj("XL"),
 	},
 	color: {type: String, required: true},
 	price: {
@@ -23,7 +23,7 @@ const VariantSchema = new mongoose.Schema({
 		value: {type: Number, min: [0.01, "Price value must be greater than zero."], required: true}
 	},
 	assets: {
-		thumbnail: {type: String, required: true},
+		thumbnail: {type: String},
 		images: [String]
 	},
 	popularityIndex: {type: Number, default: 0},

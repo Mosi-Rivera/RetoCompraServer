@@ -153,7 +153,7 @@ module.exports.whoAmIController = async (req, res, next) => {
             }
         });
     } catch (error) {
-        res.sendStatus(500) && next(error);
+        res.sendStatus(500);
     }
 }
 

@@ -16,13 +16,13 @@ router.route("/getAllProducts").get(getAllProducts)
 
 router.route('/crudProductsroutes').patch(updateCrudProduct);
 
-router.route('/crudProductsroutes').delete(removeCrudProduct);
+router.route('/deleteProduct').delete(removeCrudProduct);
 
 router.route('/crudProductsroutes').post(addCrudProduct);
 
 router.route('/crudVariantsroutes').patch(updateCrudVariant);
 
-router.route('/crudVariantsroutes').delete(removeCrudVariant);
+router.route('/deleteVariant').delete(removeCrudVariant);
 
 router.route('/crudVariantsroutes').post(addCrudVariant);
 
