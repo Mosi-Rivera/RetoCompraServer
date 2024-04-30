@@ -1,7 +1,9 @@
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
+const ChangeLog = require('../models/change_log');
 const imageUpload = require("../utils/Imageupload");
 const mongoose = require("mongoose");
+const User = require("../models/user");
 
 module.exports.getProducts = async (req, res, next) => {
     try {
@@ -217,6 +219,16 @@ module.exports.updateCrudProduct = async (req, res, next) => {
         const _id = req.body._id;
         const { name, description, section, brand } = req.body;
         const product = await Product.findByIdAndUpdate(_id, { name, description, section, brand }, { new: true });
+        if (!product) {
+            return res.sendStatus(404) && next(new Error("Product not found"));
+        }
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.productModify(
+                user._id,
+                product._id
+            );
+        }
         res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -226,9 +238,20 @@ module.exports.updateCrudProduct = async (req, res, next) => {
 module.exports.removeCrudProduct = async (req, res, next) => {
     try {
         const _id = req.body._id;
-        console.log(_id)
         const product = await Product.findByIdAndDelete(_id, {});
         await Variant.deleteMany({ product: _id })
+
+        if (!product) {
+            return res.sendStatus(404) && next(new Error('Product not found.'));
+        }
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.productDelete(
+                user._id,
+                product._id
+            );
+        }
 
         res.status(200).json({ message: "product was deleted", product });
     } catch (error) {
@@ -240,6 +263,15 @@ module.exports.addCrudProduct = async (req, res, next) => {
     try {
         const { name, description, section, brand } = req.body;
         const product = await Product.create({ name, description, section, brand });
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.productDelete(
+                user._id,
+                product
+            );
+        }
+
         res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -261,23 +293,32 @@ module.exports.updateCrudVariant = async (req, res, next) => {
         if (color) updateObject.$set["color"] = color;
         if (price) updateObject.$set["price.value"] = price;
 
-        console.log(updateObject)
 
         const variant = await Variant.findByIdAndUpdate(_id, updateObject,
             { new: true });
 
-        console.log(variant)
 
         if (!variant) {
             return (res.sendStatus(404)) && next(new Error("Variant not found"))
         }
 
-        const imageUrl = await imageUpload(imageData, variant.product, variant._id)
+        if (imageData) {
+            const imageUrl = await imageUpload(imageData, variant.product, variant._id)
 
-        variant.assets.thumbnail = imageUrl
-        variant.assets.images = [imageUrl]
+            variant.assets.thumbnail = imageUrl
+            variant.assets.images = [imageUrl]
 
-        await variant.save()
+            await variant.save()
+        }
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.variantModify(
+                user._id,
+                variant._id
+            );
+        }
+
 
         res.status(200).json(variant);
     } catch (error) {
@@ -288,13 +329,19 @@ module.exports.updateCrudVariant = async (req, res, next) => {
 module.exports.removeCrudVariant = async (req, res, next) => {
     try {
         const _id = req.body._id;
-        // const size = "M"
         const variant = await Variant.findByIdAndDelete(_id, {});
 
-        // const variant = await Variant.findByIdAndUpdate(
-        //     _id,
-        //     { $set: { [`stock.${size}.stock`]: 0 } },
-        //     { new: true });
+        if (!variant) {
+            return res.sendStatus(404) && next(new Error('Variant not found.'));
+        }
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.variantDelete(
+                user._id,
+                variant._id
+            );
+        }
 
         res.status(200).json({ message: `variant with id: ${_id} successfully deleted!` });
     } catch (error) {
@@ -323,7 +370,15 @@ module.exports.addCrudVariant = async (req, res, next) => {
         variant.assets.thumbnail = imageUrl
         variant.assets.images = [imageUrl]
 
-        await variant.save()
+        await variant.save();
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.variantCreate(
+                user._id,
+                variant
+            );
+        }
 
         res.status(200).json(variant);
     } catch (error) {
