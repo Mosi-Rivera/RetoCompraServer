@@ -4,8 +4,10 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const schema = new passwordValidator();
+const crypto = require('crypto');
 const { generateAccessToken, generateRefreshToken, msLifetimeAccessToken, msLifetimeRefreshToken } = require('../utils/jwt');
-const CryptoJS = require("crypto-js")
+const CryptoJS = require("crypto-js");
+const { sendVerificationEmail } = require('../utils/mailer');
 
 schema
     .is().min(5)
@@ -37,7 +39,8 @@ module.exports.registerController = async (req, res, next) => {
             firstName,
             lastName,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            emailVerificationId: crypto.randomBytes(20).toString('hex')
         });
 
         const user = await newUser.save();
@@ -55,6 +58,7 @@ module.exports.registerController = async (req, res, next) => {
             )
         })
         await user.save()
+        sendVerificationEmail(user, process.env.NODE_ENV ?`${req.protocol}://${req.get('host')}` : "http://localhost:5173");
 
         res.status(200).json({
             user: {
@@ -62,7 +66,9 @@ module.exports.registerController = async (req, res, next) => {
                 lastName: user.lastName,
                 email: user.lastName,
                 role: user.role,
-                _id: user._id
+                _id: user._id,
+                cart: user.cart,
+                emailVerified: user.emailVerified
             }
         });
     }
@@ -128,7 +134,8 @@ module.exports.loginController = async (req, res, next) => {
                 email: user.email,
                 role: user.role,
                 _id: user._id,
-                cart: user.cart
+                cart: user.cart,
+                emailVerified: user.emailVerified
             }
         })
     } catch (error) {
@@ -149,7 +156,8 @@ module.exports.whoAmIController = async (req, res, next) => {
                 lastName: user.lastName,
                 email: user.email,
                 role: user.role,
-                cart: user.cart
+                cart: user.cart,
+                emailVerified: user.emailVerified
             }
         });
     } catch (error) {
@@ -167,6 +175,46 @@ module.exports.logoutController = async (req, res, next) => {
             res.clearCookie("refreshToken", { httpOnly: true });
         }
         res.sendStatus(200);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.sendEmailVerification = async (req, res, next) => {
+    try {
+        const email = req.params.email;
+        const user = await User.findOneAndUpdate(
+            {email},
+            {$set: {emailVerificationId:  crypto.randomBytes(20).toString('hex')}},
+            {new: true}
+        );
+        if (!user) {
+            throw new Error('Error: User not found.');
+        }
+        await sendVerificationEmail(user, process.env.NODE_ENV ?`${req.protocol}://${req.get('host')}` : "http://localhost:5173");
+console.log();
+        res.sendStatus(200);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.verifyEmail = async (req, res, next) => {
+    try {
+        const {userId, validationCode} = req.params;
+        const user = await User.findOneAndUpdate({_id: userId, emailVerified: false, emailVerificationId: validationCode}, {$set: {emailVerified: true}}, {new: true});
+        console.log(user, validationCode, userId);
+        if (!user) {
+            throw new Error("Error: Invaid user, token or already verified.");
+        }
+        res.status(200).json({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            emailVerified: user.emailVerified
+        });
+
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
