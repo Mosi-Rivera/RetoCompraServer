@@ -202,11 +202,18 @@ console.log();
 module.exports.verifyEmail = async (req, res, next) => {
     try {
         const {userId, validationCode} = req.params;
-        const response = await User.updateOne({_id: userId, emailVerified: false, emailVerificationId: validationCode}, {$set: {emailVerified: true}});
-        if (response.matchedCount === 0) {
+        const user = await User.findOneAndUpdate({_id: userId, emailVerified: false, emailVerificationId: validationCode}, {$set: {emailVerified: true}}, {new: true});
+        console.log(user, validationCode, userId);
+        if (!user) {
             throw new Error("Error: Invaid user, token or already verified.");
         }
-        res.sendStatus(200);
+        res.status(200).json({
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+            emailVerified: user.emailVerified
+        });
 
     } catch (error) {
         res.sendStatus(500) && next(error);
