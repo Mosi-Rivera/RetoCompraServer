@@ -1,26 +1,115 @@
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
+const ChangeLog = require('../models/change_log');
+const imageUpload = require("../utils/Imageupload");
+const mongoose = require("mongoose");
+const User = require("../models/user");
 
 module.exports.getProducts = async (req, res, next) => {
     try {
         const productQuery = Product.parseQuery(req.query);
-        const productIds = (await Product.find(productQuery).select({ _id: 1 })).map(({ _id }) => _id);
+        let [variantQuery, skip, limit, sort] = Variant.parseQuery(req.query);
+        if (sort) {
+            const tmpSort = {};
+            for (const k in sort) {
+                tmpSort['variants.' + k] = sort[k];
+            }
+            sort = tmpSort;
+        }
 
-        const [query, skip, limit, sort] = Variant.parseQuery(req.query);
-        query.product = { $in: productIds };
-        const [products, count] = await Promise.all([
-            Variant.find(query).sort(sort || {}).skip(skip).limit(limit).populate('product', 'brand name').select({
-                _id: 1,
-                'assets.thumbnail': 1,
-                price: 1
-            }),
-            Variant.countDocuments(query)
-        ]);
+        const pipeline = [
+            {
+                $match: productQuery
+            },
+            {
+                $lookup: {
+                    from: "variants",
+                    let: { productId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                ...variantQuery,
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$product", "$$productId"] }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: "products",
+                                localField: "product",
+                                foreignField: "_id",
+                                as: "product"
+                            }
+                        },
+                        { $unwind: "$product" },
+                        {
+                            $project: {
+                                _id: 1,
+                                product: {
+                                    _id: "$product._id",
+                                    name: "$product.name",
+                                    brand: "$product.brand",
+                                    section: "$product.section"
+                                },
+                                "assets.thumbnail": 1,
+                                price: 1
+                            }
+                        }
+                    ],
+                    as: "variants"
+                }
+            },
+            { $unwind: "$variants" },
+            { $sort: sort || {'variants.popularity_index': -1}},
+            {
+                $group: {
+                    _id: null,
+                    count: { $sum: 1 },
+                    variants: { $push: "$variants" },
+                    sortedVariants: {$push: "$sortedVariants"}
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    count: 1,
+                    variants: { $slice: ["$variants", skip, limit] },
+                    sortedVariants: 1
+                }
+            }
+        ];
+
+        const result = await Product.aggregate(pipeline);
+
+        const [{ variants: products, count }] = result;
+
         res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count });
     }
     catch (err) {
         res.sendStatus(500) && next(err);
     }
+    // try {
+    //     const productQuery = Product.parseQuery(req.query);
+    //     const productIds = (await Product.find(productQuery).select({ _id: 1 })).map(({ _id }) => _id);
+    //
+    //     const [query, skip, limit, sort] = Variant.parseQuery(req.query);
+    //     query.product = { $in: productIds };
+    //     const [products, count] = await Promise.all([
+    //         Variant.find(query).sort(sort || {}).skip(skip).limit(limit).populate('product', 'brand name').select({
+    //             _id: 1,
+    //             'assets.thumbnail': 1,
+    //             price: 1
+    //         }),
+    //         Variant.countDocuments(query)
+    //     ]);
+    //     res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count });
+    // }
+    // catch (err) {
+    //     res.sendStatus(500) && next(err);
+    // }
 }
 
 module.exports.searchProducts = async (req, res, next) => {
@@ -99,7 +188,7 @@ module.exports.getVariantInfo = async (req, res, next) => {
         const variantId = req.params.params;
         const variant = await Variant.findOneAndUpdate({ _id: variantId }, { $inc: { popularityIndex: 1 } }).populate('product');
         if (!variant)
-            return res.sendStatus(404)
+        return res.sendStatus(404)
         const id = variant.product._id
         const colors = await Variant.find({ product: id, _id: { $ne: variant._id } }).select({ color: 1, _id: 1, 'assets.thumbnail': 1 })
         res.status(200).json({ variant, colors })
@@ -130,6 +219,16 @@ module.exports.updateCrudProduct = async (req, res, next) => {
         const _id = req.body._id;
         const { name, description, section, brand } = req.body;
         const product = await Product.findByIdAndUpdate(_id, { name, description, section, brand }, { new: true });
+        if (!product) {
+            return res.sendStatus(404) && next(new Error("Product not found"));
+        }
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.productModify(
+                user._id,
+                product._id
+            );
+        }
         res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -138,9 +237,23 @@ module.exports.updateCrudProduct = async (req, res, next) => {
 
 module.exports.removeCrudProduct = async (req, res, next) => {
     try {
-        const _id = req.product._id;
+        const _id = req.body._id;
         const product = await Product.findByIdAndDelete(_id, {});
-        res.status(200).json(product);
+        await Variant.deleteMany({ product: _id })
+
+        if (!product) {
+            return res.sendStatus(404) && next(new Error('Product not found.'));
+        }
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.productDelete(
+                user._id,
+                product._id
+            );
+        }
+
+        res.status(200).json({ message: "product was deleted", product });
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -149,9 +262,16 @@ module.exports.removeCrudProduct = async (req, res, next) => {
 module.exports.addCrudProduct = async (req, res, next) => {
     try {
         const { name, description, section, brand } = req.body;
-        console.log(req.body)
         const product = await Product.create({ name, description, section, brand });
-        console.log(product)
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.productDelete(
+                user._id,
+                product
+            );
+        }
+
         res.status(200).json(product);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -161,17 +281,45 @@ module.exports.addCrudProduct = async (req, res, next) => {
 module.exports.updateCrudVariant = async (req, res, next) => {
     try {
         const _id = req.body._id;
-        const { xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
-        const variant = await Variant.findByIdAndUpdate(_id, {
-            $set: {
-                "stock.XS.stock": xsStock,
-                "stock.S.stock": sStock,
-                "stock.M.stock": mStock,
-                "stock.L.stock": lStock,
-                "stock.XL.stock": xlStock,
-                color, price, assets
-            }
-        }, { new: true });
+        const { xsStock, sStock, mStock, lStock, xlStock, color, price, imageData } = req.body;
+
+
+        const updateObject = { $inc: {}, $set: {} }
+        if (xsStock) updateObject.$inc["stock.XS.stock"] = xsStock;
+        if (sStock) updateObject.$inc["stock.S.stock"] = sStock;
+        if (mStock) updateObject.$inc["stock.M.stock"] = mStock;
+        if (lStock) updateObject.$inc["stock.L.stock"] = lStock;
+        if (xlStock) updateObject.$inc["stock.XL.stock"] = xlStock;
+        if (color) updateObject.$set["color"] = color;
+        if (price) updateObject.$set["price.value"] = price;
+
+
+        const variant = await Variant.findByIdAndUpdate(_id, updateObject,
+            { new: true });
+
+
+        if (!variant) {
+            return (res.sendStatus(404)) && next(new Error("Variant not found"))
+        }
+
+        if (imageData) {
+            const imageUrl = await imageUpload(imageData, variant.product, variant._id)
+
+            variant.assets.thumbnail = imageUrl
+            variant.assets.images = [imageUrl]
+
+            await variant.save()
+        }
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.variantModify(
+                user._id,
+                variant._id
+            );
+        }
+
+
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -182,7 +330,20 @@ module.exports.removeCrudVariant = async (req, res, next) => {
     try {
         const _id = req.body._id;
         const variant = await Variant.findByIdAndDelete(_id, {});
-        res.status(200).json(variant);
+
+        if (!variant) {
+            return res.sendStatus(404) && next(new Error('Variant not found.'));
+        }
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.variantDelete(
+                user._id,
+                variant._id
+            );
+        }
+
+        res.status(200).json({ message: `variant with id: ${_id} successfully deleted!` });
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -190,15 +351,35 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 
 module.exports.addCrudVariant = async (req, res, next) => {
     try {
-        const { xsStock, sStock, mStock, lStock, xlStock, color, price, assets } = req.body;
-        const variant = await Variant.Create({
+        const { _id, xsStock, sStock, mStock, lStock, xlStock, color, price, imageData } = req.body;
+        console.log(imageData)
+
+        const variant = await Variant.create({
+            "product": new mongoose.Types.ObjectId(_id),
             "stock.XS.stock": xsStock,
             "stock.S.stock": sStock,
             "stock.M.stock": mStock,
             "stock.L.stock": lStock,
-            "stock.XL.stock": xlStock
-        },
-            color, price, assets);
+            "stock.XL.stock": xlStock,
+            color,
+            "price.value": price,
+        });
+
+        const imageUrl = await imageUpload(imageData, variant.product, variant._id)
+
+        variant.assets.thumbnail = imageUrl
+        variant.assets.images = [imageUrl]
+
+        await variant.save();
+
+        const user = (await User.findOne({email: req.email}));
+        if (user) {
+            ChangeLog.variantCreate(
+                user._id,
+                variant
+            );
+        }
+
         res.status(200).json(variant);
     } catch (error) {
         res.sendStatus(500) && next(error);

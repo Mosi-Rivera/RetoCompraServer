@@ -1,8 +1,7 @@
-
-
-
 const { getProducts, searchProducts, getVariantInfo, getAllProducts, addCrudProduct, addCrudVariant, removeCrudProduct, removeCrudVariant, updateCrudProduct, updateCrudVariant } = require('../controllers/product_controllers');
-
+const {authenticateToken} = require('../middlewares/authorization');
+const {validateRole} = require('../middlewares/validateRole');
+const {STAFF, ADMIN} = require('../constants/role').obj;
 
 const router = require('express').Router();
 
@@ -14,17 +13,16 @@ router.route("/productInfo/:params").get(getVariantInfo);
 
 router.route("/getAllProducts").get(getAllProducts)
 
-router.route('/crudProductsroutes').patch(updateCrudProduct);
+router.route('/crudProductsroutes').patch(authenticateToken, validateRole([STAFF, ADMIN]), updateCrudProduct);
 
-router.route('/crudProductsroutes').delete(removeCrudProduct);
+router.route('/deleteProduct').delete(authenticateToken, validateRole([STAFF, ADMIN]), removeCrudProduct);
 
-router.route('/crudProductsroutes').post(addCrudProduct);
+router.route('/crudProductsroutes').post(authenticateToken, validateRole([STAFF, ADMIN]), addCrudProduct);
 
-router.route('/crudVariantsroutes').patch(updateCrudVariant);
+router.route('/crudVariantsroutes').patch(authenticateToken, validateRole([STAFF, ADMIN]), updateCrudVariant);
 
-router.route('/crudVariantsroutes').delete(removeCrudVariant);
+router.route('/deleteVariant').delete(authenticateToken, validateRole([STAFF, ADMIN]), removeCrudVariant);
 
-router.route('/crudVariantsroutes').post(addCrudVariant);
-
+router.route('/crudVariantsroutes').post(authenticateToken, validateRole([STAFF, ADMIN]), addCrudVariant);
 
 module.exports = router;
