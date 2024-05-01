@@ -15,7 +15,7 @@ module.exports.setDeliveryStatusController = async (req, res, next) => {
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.orderModify(
-                user._id,
+                user,
                 order._id,
                 {statusSetTo: status}
             );
@@ -42,6 +42,7 @@ module.exports.getOrdersController = async (req, res, next) => {
             case 'old': sort = {createdAt: 1}; break;
             default: sort = {createdAt: -1}; break;
         }
+        console.log(req.query);
         const pipeline = [
             { $match: req.query },
             { $sort: sort || { createdAt: -1 } },
@@ -84,11 +85,11 @@ module.exports.getOrdersController = async (req, res, next) => {
                     orders: { $slice: ["$orders", (page - 1) * limit, limit] }
             }}
         );
-        const  [result] = await Order.aggregate(pipeline);
-        if (!result) {
+        const  result = await Order.aggregate(pipeline);
+        if (!result[0]) {
             return res.status(200).json({orders: [], count: 0, pages: 0});
         }
-        const { orders, count } = result;
+        const { orders, count } = result[0];
         res.status(200).json({orders, count, pages: Math.ceil(count / limit)});
     } catch (error) {
         res.sendStatus(500) && next(error);

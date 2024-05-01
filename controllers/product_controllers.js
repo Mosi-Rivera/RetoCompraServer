@@ -4,6 +4,7 @@ const ChangeLog = require('../models/change_log');
 const imageUpload = require("../utils/Imageupload");
 const mongoose = require("mongoose");
 const User = require("../models/user");
+const { parseInputStrToInt } = require("../utils/input");
 
 module.exports.getProducts = async (req, res, next) => {
     try {
@@ -188,10 +189,10 @@ module.exports.getVariantInfo = async (req, res, next) => {
         const variantId = req.params.params;
         const variant = await Variant.findOneAndUpdate({ _id: variantId }, { $inc: { popularityIndex: 1 } }).populate('product');
         if (!variant)
-        return res.sendStatus(404)
-        const id = variant.product._id
-        const colors = await Variant.find({ product: id, _id: { $ne: variant._id } }).select({ color: 1, _id: 1, 'assets.thumbnail': 1 })
-        res.status(200).json({ variant, colors })
+        return res.sendStatus(404);
+        const id = variant.product._id;
+        const colors = await Variant.find({ product: id, _id: { $ne: variant._id } }).select({ color: 1, _id: 1, 'assets.thumbnail': 1 });
+        res.status(200).json({ variant, colors });
 
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -200,16 +201,86 @@ module.exports.getVariantInfo = async (req, res, next) => {
 
 module.exports.getAllProducts = async (req, res, next) => {
     try {
-        // const [query, skip, limit, sort] = Variant.parseQuery(req.query)
-
-        const page = parseInt(req.query.page)
-        const limit = parseInt(req.query.limit)
+        const page = parseInputStrToInt(req.query.page, 1, 10);
+        const limit = parseInputStrToInt(req.query.limit, 25, 10);
         const skip = (page - 1) * limit;
+        const sort = req.query.sort == 'old' ? { createdAt: 1 } : { createdAt: -1 };
+        delete req.query.page;
+        delete req.query.limit;
+        delete req.query.sort;
 
-        const [products, count] = await Promise.all([Variant.find({}).sort({ section: 1 }).skip(skip).limit(limit).populate('product'), Variant.countDocuments()]);
-        res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count })
+        const [products, count] = await Promise.all([Product.find(req.query).sort(sort).skip(skip).limit(limit), Product.countDocuments()]);
+        res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count });
     } catch (error) {
-        res.sendStatus(500)
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.getAllVariants = async (req, res, next) => {
+    try {
+        let [variantQuery, skip, limit, sort] = Variant.parseQuery(req.query);
+        sort = sort || {createdAt: -1};
+        if (variantQuery.sku && mongoose.Types.ObjectId.isValid(variantQuery.sku)) {
+            variantQuery.$or = [{
+                _id: new mongoose.Types.ObjectId(variantQuery.sku)
+            }];
+        }
+        delete variantQuery.sku;
+
+        const [products, count] = await Promise.all([Variant.find(variantQuery).sort(sort).skip(skip).limit(limit).populate('product'), Variant.countDocuments(variantQuery)]);
+        res.status(200).json({ products, pages: Math.ceil(count / limit), productCount: count });
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.searchAllProducts = async (req, res ,next) => {
+    try {
+        const page = parseInputStrToInt(req.query.page, 1);
+        const limit = parseInputStrToInt(req.query.limit, 25);
+        const skip = (page - 1) * limit;
+        const search = req.query.search || "";
+        const sort = req.query.sort == 'old' ? { createdAt: 1 } : { createdAt: -1 };
+
+        delete req.query.page;
+        delete req.query.limit;
+        delete req.query.search;
+        delete req.query.sort;
+        const regex = { $regex: new RegExp(`.*${search.replace(/\s+/g, ".*")}.*`, 'i') };
+        const orQuery = [
+            {name: regex},
+            {description: regex},
+            {brand: regex},
+        ];
+        if (mongoose.Types.ObjectId.isValid(search)) {
+            orQuery.push({_id: new mongoose.Types.ObjectId(search)});
+        }
+
+        const [result] = await Product.aggregate([
+            {
+                $match: {
+                    $or: orQuery,
+                    ...req.query
+                },
+            },
+            {
+                $sort: sort
+            },
+            {
+                $facet: {
+                    metadata: [{$count: "total"}],
+                    data: [
+                        {$skip: skip},
+                        {$limit: limit}
+                    ]
+                }
+            }
+        ]);
+        const {data: products, metadata } = result;
+        const count = metadata?.[0]?.total || 0;
+        res.status(200).json({products: products, pages: Math.ceil(count / limit), productCount: count});
+    } catch (error) {
+        res.sendStatus(500) && next(error);
     }
 }
 
@@ -225,7 +296,7 @@ module.exports.updateCrudProduct = async (req, res, next) => {
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.productModify(
-                user._id,
+                user,
                 product._id
             );
         }
@@ -248,7 +319,7 @@ module.exports.removeCrudProduct = async (req, res, next) => {
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.productDelete(
-                user._id,
+                user,
                 product._id
             );
         }
@@ -267,7 +338,7 @@ module.exports.addCrudProduct = async (req, res, next) => {
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.productDelete(
-                user._id,
+                user,
                 product
             );
         }
@@ -314,7 +385,7 @@ module.exports.updateCrudVariant = async (req, res, next) => {
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.variantModify(
-                user._id,
+                user,
                 variant._id
             );
         }
@@ -338,7 +409,7 @@ module.exports.removeCrudVariant = async (req, res, next) => {
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.variantDelete(
-                user._id,
+                user,
                 variant._id
             );
         }
@@ -352,7 +423,6 @@ module.exports.removeCrudVariant = async (req, res, next) => {
 module.exports.addCrudVariant = async (req, res, next) => {
     try {
         const { _id, xsStock, sStock, mStock, lStock, xlStock, color, price, imageData } = req.body;
-        console.log(imageData)
 
         const variant = await Variant.create({
             "product": new mongoose.Types.ObjectId(_id),
@@ -375,7 +445,7 @@ module.exports.addCrudVariant = async (req, res, next) => {
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.variantCreate(
-                user._id,
+                user,
                 variant
             );
         }

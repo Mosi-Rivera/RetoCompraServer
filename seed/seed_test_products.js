@@ -57,7 +57,7 @@ const atoi = (str, def = 10) => {
                 brand: brands[i % brands.length]
             });
         const productDocuments = await Product.insertMany(products);
-        productDocuments.forEach(product => changeLogs.push(ChangeLog.productCreate(admin._id, product)));
+        productDocuments.forEach(product => changeLogs.push(ChangeLog.productCreate(admin, product)));
         await Promise.all(changeLogs);
         for (let i = productDocuments.length; i--;)
         {
@@ -110,7 +110,7 @@ const atoi = (str, def = 10) => {
         }
         changeLogs = [];
         (await Variant.insertMany(variants))
-            .forEach(variant => changeLogs.push(ChangeLog.variantCreate(admin._id, variant)));
+            .forEach(variant => changeLogs.push(ChangeLog.variantCreate(admin, variant)));
         await Promise.all(changeLogs);
         console.log('PRODUCTS SEEDED!');
     }

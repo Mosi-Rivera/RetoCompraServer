@@ -1,4 +1,4 @@
-const { getProducts, searchProducts, getVariantInfo, getAllProducts, addCrudProduct, addCrudVariant, removeCrudProduct, removeCrudVariant, updateCrudProduct, updateCrudVariant } = require('../controllers/product_controllers');
+const { getProducts, searchProducts, getVariantInfo, getAllProducts, addCrudProduct, addCrudVariant, removeCrudProduct, removeCrudVariant, updateCrudProduct, updateCrudVariant, searchAllProducts, getAllVariants } = require('../controllers/product_controllers');
 const {authenticateToken} = require('../middlewares/authorization');
 const {validateRole} = require('../middlewares/validateRole');
 const {STAFF, ADMIN} = require('../constants/role').obj;
@@ -11,7 +11,11 @@ router.route('/search/:search').get(searchProducts);
 
 router.route("/productInfo/:params").get(getVariantInfo);
 
-router.route("/getAllProducts").get(getAllProducts)
+router.route("/getAllProducts").get(getAllProducts);
+
+router.route("/getAllVariants").get(getAllVariants);
+
+router.route("/searchProducts").get(searchAllProducts);
 
 router.route('/crudProductsroutes').patch(authenticateToken, validateRole([STAFF, ADMIN]), updateCrudProduct);
 
