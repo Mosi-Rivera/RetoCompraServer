@@ -234,6 +234,26 @@ module.exports.getAllVariants = async (req, res, next) => {
     }
 }
 
+module.exports.getSingleProduct = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const product = await Product.findById(id);
+        res.status(200).json(product);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
+module.exports.getSingleVariant = async (req, res, next) => {
+    try {
+        const id = req.params.id;
+        const variant = await Variant.findById(id);
+        res.status(200).json(variant);
+    } catch (error) {
+        res.sendStatus(500) && next(error);
+    }
+}
+
 module.exports.searchAllProducts = async (req, res ,next) => {
     try {
         const page = parseInputStrToInt(req.query.page, 1);
