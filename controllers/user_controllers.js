@@ -70,7 +70,7 @@ module.exports.setUserRole = async (req, res, next) => {
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.userModify(
-                user._id,
+                user,
                 user_modified._id,
                 {roleChangedTo: role}
             );

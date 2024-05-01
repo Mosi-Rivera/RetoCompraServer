@@ -6,6 +6,6 @@ const {STAFF, ADMIN} = require('../constants/role').obj;
 const router = require('express').Router();
 
 //TODO: Add auth and role middleware;
-router.route('/').get(authenticateToken, validateRole([STAFF, ADMIN]), getChanglogsController);
+router.route('/').get(authenticateToken, validateRole([STAFF, ADMIN]),  getChanglogsController);
 
 module.exports = router;

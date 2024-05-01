@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const roles = require('../constants/role').arr;
 const User = require('./user');
 const Variant = require('./Variant');
 const Product = require('./Product');
@@ -6,6 +7,8 @@ const Order = require('../models/order');
 const Schema = mongoose.Schema;
 
 const changeLogSchema = new Schema({
+	userEmail: {type: String, required: true},
+	userRole: {type: String, required: true, enum: roles},
 	userId: {type: mongoose.Types.ObjectId, required: true, ref: User},
 	documentType: {type: String, required: true, enum: ["variant", "product", "user", "order"]},
 	action: {type: String, requierd: true, enum: ["delete", "modify", "create"]},
@@ -18,9 +21,11 @@ const changeLogSchema = new Schema({
 	timestamps: true
 });
 
-changeLogSchema.statics.variantCreate = function(userId, variant) {
+changeLogSchema.statics.variantCreate = function(user, variant) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "variant",
 		action: "create",
 		variant: variant._id,
@@ -29,9 +34,11 @@ changeLogSchema.statics.variantCreate = function(userId, variant) {
 	});
 }
 
-changeLogSchema.statics.productCreate = function(userId, product) {
+changeLogSchema.statics.productCreate = function(user, product) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "product",
 		action: "create",
 		product: product._id,
@@ -40,9 +47,11 @@ changeLogSchema.statics.productCreate = function(userId, product) {
 	});
 }
 
-changeLogSchema.statics.userCreate = function(userId, user) {
+changeLogSchema.statics.userCreate = function(user, user) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "user",
 		action: "create",
 		user: user._id,
@@ -51,9 +60,11 @@ changeLogSchema.statics.userCreate = function(userId, user) {
 	});
 }
 
-changeLogSchema.statics.orderCreate = function(userId, order) {
+changeLogSchema.statics.orderCreate = function(user, order) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "order",
 		action: "create",
 		order: order._id,
@@ -62,9 +73,11 @@ changeLogSchema.statics.orderCreate = function(userId, order) {
 	});
 }
 
-changeLogSchema.statics.variantDelete = function(userId, variantId) {
+changeLogSchema.statics.variantDelete = function(user, variantId) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "variant",
 		action: "delete",
 		variant: variantId,
@@ -72,9 +85,11 @@ changeLogSchema.statics.variantDelete = function(userId, variantId) {
 	});
 }
 
-changeLogSchema.statics.productDelete = function(userId, productId) {
+changeLogSchema.statics.productDelete = function(user, productId) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "product",
 		action: "delete",
 		product: productId,
@@ -82,9 +97,11 @@ changeLogSchema.statics.productDelete = function(userId, productId) {
 	});
 }
 
-changeLogSchema.statics.userDelete = function(userId, userIdDeleted) {
+changeLogSchema.statics.userDelete = function(user, userIdDeleted) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "user",
 		action: "delete",
 		user: userIdDeleted,
@@ -92,9 +109,11 @@ changeLogSchema.statics.userDelete = function(userId, userIdDeleted) {
 	});
 }
 
-changeLogSchema.statics.orderDelete = function(userId, orderId) {
+changeLogSchema.statics.orderDelete = function(user, orderId) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "order",
 		action: "delete",
 		order: orderId,
@@ -103,9 +122,11 @@ changeLogSchema.statics.orderDelete = function(userId, orderId) {
 }
 
 
-changeLogSchema.statics.variantModify = function(userId, variantId, update) {
+changeLogSchema.statics.variantModify = function(user, variantId, update) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "variant",
 		action: "modify",
 		variant: variantId,
@@ -113,9 +134,11 @@ changeLogSchema.statics.variantModify = function(userId, variantId, update) {
 	});
 }
 
-changeLogSchema.statics.productModify = function(userId, productId, update) {
+changeLogSchema.statics.productModify = function(user, productId, update) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "product",
 		action: "modify",
 		product: productId,
@@ -123,9 +146,11 @@ changeLogSchema.statics.productModify = function(userId, productId, update) {
 	});
 }
 
-changeLogSchema.statics.userModify = function(userId, userIdModified, update) {
+changeLogSchema.statics.userModify = function(user, userIdModified, update) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "user",
 		action: "modify",
 		user: userIdModified,
@@ -133,9 +158,11 @@ changeLogSchema.statics.userModify = function(userId, userIdModified, update) {
 	});
 }
 
-changeLogSchema.statics.orderModify = function(userId, orderId, update) {
+changeLogSchema.statics.orderModify = function(user, orderId, update) {
 	return this.create({
-		userId: userId,
+		userEmail: user.email,
+		userRole: user.role,
+		userId: user._id,
 		documentType: "order",
 		action: "modify",
 		order: orderId,
