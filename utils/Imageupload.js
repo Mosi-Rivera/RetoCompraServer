@@ -11,28 +11,52 @@ cloudinary.config({
 });
 
 
-module.exports = (image, productId, variantId) => {
-  //imgage = > base64
-  // console.log('Image data:', image);
-  const opts = {
+module.exports.cloudinaryDeleteImage = (id, folder) => {
+  return cloudinary.uploader.destroy(`GraphicGroove/${folder}/${id}`, {
+    invalidate: true
+  });
+}
+
+module.exports.cloudinaryAddImage = async (image, productId, variantId) => {
+  return (await cloudinary.uploader.upload(image, {
     overwrite: true,
     invalidate: true,
     resource_type: "auto",
     public_id: variantId,
     folder: `GraphicGroove/${productId}`
-  };
+  })).secure_url;
+}
 
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload(image, opts, (error, result) => {
-      console.log('Cloudinary error:', error);
-      console.log('Cloudinary result:', result);
-
-      if (result && result.secure_url) {
-        console.log(result.secure_url);
-        return resolve(result.secure_url);
-      }
-      console.log(error.message);
-      return reject({ message: error.message });
-    });
+module.exports.cloudinaryDeleteManyImages = (idsDataArray) => {
+  return cloudinary.api.delete_resources(
+    idsDataArray.map(({id, folder}) => `GraphicGroove/${folder}/${id}`), {
+    invalidate: true
   });
-};
+}
+
+module.exports.cloudinaryDeleteFolder = (folder) => {
+   return cloudinary.api.delete_folder(folder);
+}
+
+// module.exports.addImage = (image, productId, variantId) => {
+//   const opts = {
+//     overwrite: true,
+//     invalidate: true,
+//     resource_type: "auto",
+//     public_id: variantId,
+//   };
+//
+//   return new Promise((resolve, reject) => {
+//     cloudinary.uploader.upload(image, opts, (error, result) => {
+//       console.log('Cloudinary error:', error);
+//       console.log('Cloudinary result:', result);
+//
+//       if (result && result.secure_url) {
+//         console.log(result.secure_url);
+//         return resolve(result.secure_url);
+//       }
+//       console.log(error.message);
+//       return reject({ message: error.message });
+//     });
+//   });
+// }
