@@ -396,7 +396,7 @@ module.exports.updateCrudVariant = async (req, res, next) => {
 
 
         if (!variant) {
-            return (res.sendStatus(404)) && next(new Error("Variant not found"))
+            return (res.sendStatus(404)) && next(new Error("Variant not found"));
         }
 
         if (imageData) {
