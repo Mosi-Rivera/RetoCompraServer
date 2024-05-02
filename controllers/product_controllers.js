@@ -1,7 +1,7 @@
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
 const ChangeLog = require('../models/change_log');
-const imageUpload = require("../utils/Imageupload");
+const {cloudinaryAddImage, cloudinaryDeleteImage, cloudinaryDeleteManyImages} = require('../utils/Imageupload');
 const mongoose = require("mongoose");
 const User = require("../models/user");
 const { parseInputStrToInt } = require("../utils/input");
@@ -330,10 +330,15 @@ module.exports.removeCrudProduct = async (req, res, next) => {
     try {
         const _id = req.body._id;
         const product = await Product.findByIdAndDelete(_id, {});
-        await Variant.deleteMany({ product: _id })
-
         if (!product) {
             return res.sendStatus(404) && next(new Error('Product not found.'));
+        }
+
+        const variants = await Variant.find({product: _id}, {_id: 1, product: 1});
+        if (variants.length > 0) {
+            await Variant.deleteMany({ product: _id })
+            await cloudinaryDeleteManyImages(variants.map(({_id, product}) => ({id: _id, folder: product})));
+            cloudinaryDeleteFolder(_id);
         }
 
         const user = (await User.findOne({email: req.email}));
@@ -342,6 +347,7 @@ module.exports.removeCrudProduct = async (req, res, next) => {
                 user,
                 product._id
             );
+            variants.forEach(({_id}) => ChangeLog.variantDelete(user, _id));
         }
 
         res.status(200).json({ message: "product was deleted", product });
@@ -390,11 +396,11 @@ module.exports.updateCrudVariant = async (req, res, next) => {
 
 
         if (!variant) {
-            return (res.sendStatus(404)) && next(new Error("Variant not found"))
+            return (res.sendStatus(404)) && next(new Error("Variant not found"));
         }
 
         if (imageData) {
-            const imageUrl = await imageUpload(imageData, variant.product, variant._id)
+            const imageUrl = await cloudinaryAddImage(imageData, variant.product, variant._id);
 
             variant.assets.thumbnail = imageUrl
             variant.assets.images = [imageUrl]
@@ -426,6 +432,8 @@ module.exports.removeCrudVariant = async (req, res, next) => {
             return res.sendStatus(404) && next(new Error('Variant not found.'));
         }
 
+        await cloudinaryDeleteImage(variant._id, variant.product);
+
         const user = (await User.findOne({email: req.email}));
         if (user) {
             ChangeLog.variantDelete(
@@ -455,7 +463,7 @@ module.exports.addCrudVariant = async (req, res, next) => {
             "price.value": price,
         });
 
-        const imageUrl = await imageUpload(imageData, variant.product, variant._id)
+        const imageUrl = await cloudinaryAddImage(imageData, variant.product, variant._id);
 
         variant.assets.thumbnail = imageUrl
         variant.assets.images = [imageUrl]
