@@ -51,8 +51,8 @@ module.exports.registerController = async (req, res, next) => {
 
         const newEmail = user.email
 
-        const token = generateAccessToken(newEmail, newUser.role)
-        const refreshToken = generateRefreshToken(newEmail)
+        const token = generateAccessToken(newEmail, newUser.role, newUser.emailVerified);
+        const refreshToken = generateRefreshToken(newEmail);
 
         res.cookie('token', token, { httpOnly: true, maxAge: msLifetimeAccessToken });
         res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: msLifetimeRefreshToken });
@@ -103,7 +103,7 @@ module.exports.loginController = async (req, res, next) => {
         if (!validPassword) {
             return res.status(400).json({ field: "server", errorMessage: "Invalid Credentials" }) && next(new Error('Password does not match.'));
         }
-        const accessToken = generateAccessToken(email, user.role)
+        const accessToken = generateAccessToken(email, user.role, user.emailVerified);
         res.cookie("token", accessToken, {
             httpOnly: true,
             maxAge: msLifetimeAccessToken,
@@ -111,7 +111,7 @@ module.exports.loginController = async (req, res, next) => {
             signed: false
         })
 
-        const refreshToken = generateRefreshToken(email)
+        const refreshToken = generateRefreshToken(email);
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             maxAge: msLifetimeRefreshToken,
@@ -218,10 +218,26 @@ module.exports.verifyEmail = async (req, res, next) => {
                 new: true
             }
         );
-        console.log(user);
         if (!user) {
             throw new Error("Error: Token timed  out or already verified.");
         }
+        const newAccessToken = generateAccessToken(payload, user.role, user.emailVerified);
+        const newRefreshToken = generateRefreshToken(payload);
+
+
+        res.cookie("token", newAccessToken, {
+            httpOnly: true,
+            maxAge: msLifetimeAccessToken,
+            secure: false,
+            signed: false
+        })
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            maxAge: msLifetimeRefreshToken,
+            secure: false,
+            signed: false
+        })
         res.status(200).json({
             firstName: user.firstName,
             lastName: user.lastName,
