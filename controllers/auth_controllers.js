@@ -68,7 +68,7 @@ module.exports.registerController = async (req, res, next) => {
             user: {
                 firstName: user.firstName,
                 lastName: user.lastName,
-                email: user.lastName,
+                email: user.email,
                 role: user.role,
                 _id: user._id,
                 cart: user.cart,
@@ -202,8 +202,6 @@ module.exports.verifyEmail = async (req, res, next) => {
     try {
         const {verificationCode} = req.body;
         const email = req.email;
-        console.log(req.body);
-        console.log(verificationCode, email);
         const user = await User.findOneAndUpdate({
             email, 
             emailVerified: false, 
@@ -221,8 +219,8 @@ module.exports.verifyEmail = async (req, res, next) => {
         if (!user) {
             throw new Error("Error: Token timed  out or already verified.");
         }
-        const newAccessToken = generateAccessToken(payload, user.role, user.emailVerified);
-        const newRefreshToken = generateRefreshToken(payload);
+        const newAccessToken = generateAccessToken(user.email, user.role, user.emailVerified);
+        const newRefreshToken = generateRefreshToken(user.email);
 
 
         res.cookie("token", newAccessToken, {

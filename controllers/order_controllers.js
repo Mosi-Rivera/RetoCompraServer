@@ -42,7 +42,6 @@ module.exports.getOrdersController = async (req, res, next) => {
             case 'old': sort = {createdAt: 1}; break;
             default: sort = {createdAt: -1}; break;
         }
-        console.log(req.query);
         const pipeline = [
             { $match: req.query },
             { $sort: sort || { createdAt: -1 } },
@@ -124,7 +123,6 @@ module.exports.confirmationController = async (req, res, next) => {
 
 
         const user = await Order.handleOrderTransaction(email);
-        console.log(user)
         // .populate('product', 'brand name').select({
         //     _id: 1,
         //     'assets.thumbnail': 1,
@@ -132,6 +130,6 @@ module.exports.confirmationController = async (req, res, next) => {
         // }),
         res.status(200).json({ messeage: "hello" })
     } catch (error) {
-        console.log(error)
+        res.sendStatus(500) && next(error);
     }
 }

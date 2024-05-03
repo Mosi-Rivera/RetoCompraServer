@@ -22,8 +22,8 @@ const UserSchema = new mongoose.Schema({
         quantity: {type: Number, required: true, min: 1, max: 5, set: function(value){ return value > 5 ? 5 : value; }}
     }],
     emailVerificationCode: {
-        code: {type: String, required: true},
-        createdAt: {type: Date, required: true}
+        code: {type: String, required: false},
+        createdAt: {type: Date, required: false}
     },
     emailVerified: {type: Boolean, default: false}
 }, {
