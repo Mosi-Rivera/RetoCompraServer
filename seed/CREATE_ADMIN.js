@@ -20,7 +20,11 @@ PasswordSchema
         if (!emailValidator.validate(email) || !PasswordSchema.validate(password))
             throw new Error("Invalid email or password.");
         const hashpass = await bcrypt.hash(password, 10);
-        const user  = await User.create({firstName, lastName, role: "admin", email, password: hashpass, emailVerified: true, emailVerificationId: crypto.randomBytes(20).toString('hex')});
+        let user  = await User.create({firstName, lastName, role: "admin", email, password: hashpass, emailVerified: true, emailVerificationCode: {
+            code: "00000",
+            createdAt: Date.now()
+        }});
+        user = await User.findByIdAndUpdate(user._id, {$unset: {emailVerificationCode: ""}}, {new: true});
         console.log(user);
     } catch (error) {
        console.log(error);
