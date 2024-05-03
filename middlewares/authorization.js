@@ -14,6 +14,7 @@ module.exports.authenticateToken = async (req, res, next) => {
         const userEmail = payload.email;
         req.email = userEmail;
         req.userRole = payload.role;
+        req.emailVerified = payload.emailVerified;
         return next();
     } catch (error) {
         try {
@@ -33,8 +34,8 @@ module.exports.authenticateToken = async (req, res, next) => {
             //     "email": user.email,
             // "role":user.role
             // }
-            const newAccessToken = generateAccessToken(payload, user.role)
-            const newRefreshToken = generateRefreshToken(payload)
+            const newAccessToken = generateAccessToken(payload, user.role, user.emailVerified);
+            const newRefreshToken = generateRefreshToken(payload);
 
 
             res.cookie("token", newAccessToken, {
@@ -57,6 +58,7 @@ module.exports.authenticateToken = async (req, res, next) => {
             await user.save();
             req.email = email;
             req.userRole = user.role;
+            req.emailVerified = user.emailVerified;
             return next();
         } catch (error) {
             res.sendStatus(401) /*&& next(error)*/;
