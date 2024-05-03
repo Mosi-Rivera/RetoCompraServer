@@ -3,6 +3,7 @@ const roleConstants = require('../constants/role');
 const mongoose = require("mongoose");
 const Variant = require('./Variant');
 const { parseInputStrToInt } = require('../utils/input');
+const { generateEmailVerificationCode } = require('../utils/codeGeneration');
 
 const UserSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
@@ -20,12 +21,32 @@ const UserSchema = new mongoose.Schema({
         size: {type: String, enum: sizes.arr, required: true},
         quantity: {type: Number, required: true, min: 1, max: 5, set: function(value){ return value > 5 ? 5 : value; }}
     }],
-    emailVerificationId: {type: String, required: true},
+    emailVerificationCode: {
+        code: {type: String, required: true},
+        createdAt: {type: Date, required: true}
+    },
     emailVerified: {type: Boolean, default: false}
 }, {
         timestamps: true
     }
 );
+
+UserSchema.statics.newEmailVerificationCode = async function(email) {
+    const code = generateEmailVerificationCode();
+    return this.findOneAndUpdate(
+        {
+            email,
+            emailVerified: false
+        },
+        {
+            emailVerificationCode: {
+                code,
+                createdAt: new Date()
+            }
+        }, {
+            new: true
+        });
+}
 
 UserSchema.statics.getCart = async function(email) {
     const user = await this.findOne({email}).select({

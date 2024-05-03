@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const { generateAccessToken, generateRefreshToken, msLifetimeAccessToken, msLifetimeRefreshToken } = require('../utils/jwt');
 const CryptoJS = require("crypto-js");
 const { sendVerificationEmail } = require('../utils/mailer');
+const { generateEmailVerificationCode } = require('../utils/codeGeneration');
 
 schema
     .is().min(5)
@@ -40,7 +41,10 @@ module.exports.registerController = async (req, res, next) => {
             lastName,
             email,
             password: hashedPassword,
-            emailVerificationId: crypto.randomBytes(20).toString('hex')
+            emailVerificationCode: {
+                code: generateEmailVerificationCode(),
+                createdAt: new Date()
+            }
         });
 
         const user = await newUser.save();
@@ -58,7 +62,7 @@ module.exports.registerController = async (req, res, next) => {
             )
         })
         await user.save()
-        sendVerificationEmail(user, process.env.NODE_ENV ?`${req.protocol}://${req.get('host')}` : "http://localhost:5173");
+        sendVerificationEmail(user, user.emailVerificationCode.code);
 
         res.status(200).json({
             user: {
@@ -117,7 +121,7 @@ module.exports.loginController = async (req, res, next) => {
 
         const expirationDate = new Date(Date.now() + msLifetimeRefreshToken);
         if (oldRefreshToken)
-        {
+    {
             user.refreshTokens = user.refreshTokens.filter(({ token }) => token !== oldRefreshToken);
         }
         user.refreshTokens.push({
@@ -182,17 +186,12 @@ module.exports.logoutController = async (req, res, next) => {
 
 module.exports.sendEmailVerification = async (req, res, next) => {
     try {
-        const email = req.params.email;
-        const user = await User.findOneAndUpdate(
-            {email},
-            {$set: {emailVerificationId:  crypto.randomBytes(20).toString('hex')}},
-            {new: true}
-        );
+        const email = req.email;
+        const user = await User.newEmailVerificationCode(email);
         if (!user) {
             throw new Error('Error: User not found.');
         }
-        await sendVerificationEmail(user, process.env.NODE_ENV ?`${req.protocol}://${req.get('host')}` : "http://localhost:5173");
-console.log();
+        await sendVerificationEmail(user, user.emailVerificationCode.code);
         res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);
@@ -201,11 +200,27 @@ console.log();
 
 module.exports.verifyEmail = async (req, res, next) => {
     try {
-        const {userId, validationCode} = req.params;
-        const user = await User.findOneAndUpdate({_id: userId, emailVerified: false, emailVerificationId: validationCode}, {$set: {emailVerified: true}}, {new: true});
-        console.log(user, validationCode, userId);
+        const {verificationCode} = req.body;
+        const email = req.email;
+        console.log(req.body);
+        console.log(verificationCode, email);
+        const user = await User.findOneAndUpdate({
+            email, 
+            emailVerified: false, 
+            'emailVerificationCode.code': verificationCode,
+            'emailVerificationCode.createdAt': {$gte: new Date(Date.now() - 1000 * 60 * 5)}
+        },
+            {
+                $set: {emailVerified: true},
+                $unset: {emailVerificationCode: ""}
+            }, 
+            {
+                new: true
+            }
+        );
+        console.log(user);
         if (!user) {
-            throw new Error("Error: Invaid user, token or already verified.");
+            throw new Error("Error: Token timed  out or already verified.");
         }
         res.status(200).json({
             firstName: user.firstName,
