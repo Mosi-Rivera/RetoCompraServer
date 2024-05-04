@@ -52,10 +52,8 @@ module.exports.authenticateToken = async (req, res, next) => {
                 signed: false
             })
 
-            const expirationDate = new Date(Date.now() + msLifetimeRefreshToken);
-            user.refreshTokens = user.refreshTokens.filter(({ token }) => token !== refreshToken);
-            user.refreshTokens.push({ token: newRefreshToken, expiration: expirationDate });
-            await user.save();
+            await user.replaceRefreshToken(newRefreshToken, refreshToken);
+
             req.email = email;
             req.userRole = user.role;
             req.emailVerified = user.emailVerified;

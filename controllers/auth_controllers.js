@@ -56,13 +56,10 @@ module.exports.registerController = async (req, res, next) => {
 
         res.cookie('token', token, { httpOnly: true, maxAge: msLifetimeAccessToken });
         res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: msLifetimeRefreshToken });
-        user.refreshTokens.push({
-            token: refreshToken, expiration: new Date(
-                Date.now() + msLifetimeRefreshToken
-            )
-        })
-        await user.save()
-        sendVerificationEmail(user, user.emailVerificationCode.code);
+        await user.replaceRefreshToken(refreshToken);
+
+        await sendVerificationEmail(user, user.emailVerificationCode.code);
+        
 
         res.status(200).json({
             user: {
@@ -119,17 +116,7 @@ module.exports.loginController = async (req, res, next) => {
             signed: false
         })
 
-        const expirationDate = new Date(Date.now() + msLifetimeRefreshToken);
-        if (oldRefreshToken)
-    {
-            user.refreshTokens = user.refreshTokens.filter(({ token }) => token !== oldRefreshToken);
-        }
-        user.refreshTokens.push({
-            token: refreshToken,
-            expiration: expirationDate
-        });
-        await user.save();
-
+        await user.replaceRefreshToken(refreshToken, oldRefreshToken);
 
         res.status(200).json({
             user: {
@@ -201,6 +188,7 @@ module.exports.sendEmailVerification = async (req, res, next) => {
 module.exports.verifyEmail = async (req, res, next) => {
     try {
         const {verificationCode} = req.body;
+        const oldRefreshToken = req.cookies.refreshToken;
         const email = req.email;
         const user = await User.findOneAndUpdate({
             email, 
@@ -243,6 +231,7 @@ module.exports.verifyEmail = async (req, res, next) => {
             role: user.role,
             emailVerified: user.emailVerified
         });
+        await user.replaceRefreshToken(newRefreshToken, oldRefreshToken);
 
     } catch (error) {
         res.sendStatus(500) && next(error);

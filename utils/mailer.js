@@ -24,12 +24,12 @@ module.exports.sendEmail = async (destinationEmail, body, subject) => {
 module.exports.sendVerificationEmail = async (user, code) => {
     if (!code || typeof code !== 'string') throw new Error('Invalid code.');
     const body = `
-<div style="display: flex; flex-flow: column nowrap; align-items: center; width: 100%;">
-    <h1 style="text-align: center;">Verify your email address</h1>
-    <p style="text-align: center;">Hello ${user.firstName}, thank you for signing up to Graphic Groove.<br>Please verify your email to have complete access to your new account.</p>
-    <p>Your verification code is:</p>
-    <div style="padding: 2rem; font-size: 2rem; font-weight: 700; border-radius: 5px; background-color: 'rgba(0, 0, 0, 0.3)'">
-        ${code.split("").join(' ')}
+<div style="max-width: 600px;">
+    <h1 style="text-align: center; margin: 0 auto;">Verify your email address</h1>
+    <p style="text-align: center; margin: 0 auto;">Hello ${user.firstName}, thank you for signing up to Graphic Groove.<br>Please verify your email to have complete access to your new account.</p>
+    <p style="margin: 0 auto; text-align: center;">Your verification code is:</p>
+    <div style="display: block; margin: 0 auto; margin: 0 auto;">
+        <h1 style="text-align: center;">${code.split("").join(' ')}</h1>
     </div>
 </div>
 `;
