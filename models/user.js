@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const Variant = require('./Variant');
 const { parseInputStrToInt } = require('../utils/input');
 const { generateEmailVerificationCode } = require('../utils/codeGeneration');
+const { msLifetimeRefreshToken } = require('../utils/jwt');
 
 const UserSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
@@ -30,6 +31,24 @@ const UserSchema = new mongoose.Schema({
         timestamps: true
     }
 );
+
+UserSchema.methods.replaceRefreshToken = async function (refreshToken, oldRefreshToken = undefined) {
+    try {
+        if (oldRefreshToken !== undefined) {
+            this.refreshTokens = this.refreshTokens.filter(({ token }) => token !== oldRefreshToken);
+        }
+
+        const expirationDate = new Date(Date.now() + msLifetimeRefreshToken);
+        this.refreshTokens.push({
+            token: refreshToken,
+            expiration: expirationDate
+        });
+
+        return this.save();
+    } catch (error) {
+        console.log(error);
+    }
+}
 
 UserSchema.statics.newEmailVerificationCode = async function(email) {
     const code = generateEmailVerificationCode();

@@ -83,13 +83,13 @@ orderSchema.statics.handleOrderTransaction = async function (email, addressStrin
 	}
 }
 
-const toTableCell = str => '<td>' + str + '</td>';
+const toTableCell = str => '<td style="text-align: center; padding: 5px 20px;">' + str + '</td>';
 
 const generateItemRows = items => {
 	let result = '';
 	for (const item of items) {
 		result += '<tr>';
-		result += toTableCell('<img width="100" src="' + item.image + '"/>');
+		result += toTableCell('<img width="50" src="' + item.image + '"/>');
 		result += toTableCell(item.name);
 		result += toTableCell(item.size);
 		result += toTableCell(item.quantity);
@@ -100,38 +100,50 @@ const generateItemRows = items => {
 	return result;
 }
 
+const createTableHead = (text) => {
+	return '<th style="text-align: center; padding: 5px 20px;">' + text + '</th>';
+}
+
 orderSchema.methods.toHTMLOrderConfirmation = function (userInformation) {
-	const html = wrapWithEmailHTML(`<div>
-<div><img src="#"/></div>
-<div>
-<p>Dear ${userInformation.firstName},<br/><br/>Thank you for shopping at Graphic Groove! We're excited to confirm your recent order with us. Below are the details of your purchase:</p>
-<h4>Order confirmation: ${this._id}</h4>
-<h6>Order Date: ${this.created_at}</h6>
+	const html = wrapWithEmailHTML(`
+<div style="background-color: #EFEFEF; padding: 2em; max-width: 600px; font-family: sans-serif;">
+	<div><img src="#"/></div>
+	<div>
+		<p style="text-align: center;">Dear ${userInformation.firstName},<br/><br/>Thank you for shopping at Graphic Groove! We're excited to confirm your recent order with us. Below are the details of your purchase:</p>
+		<h4 style="text-align: center;">Order No.: ${this._id}</h4>
+		<h4 style="text-align: center;">Order Date: ${this.createdAt}</h4>
+	</div>
+	<div style="margin-bottom: 2rem; text-align: center;">
+		<strong>${userInformation.firstName} ${userInformation.lastName}</strong> - 
+		<strong>${this.shippingAddress}</strong>
+	</div>
+	<div style="padding: 20px; background-color: white; border-radius: 4px; margin: 0 auto;">
+		<h3>${this.items.reduce((acc, item) => acc + item.quantity, 0)} ITEMS</h3>
+		<hr/>
+		<table>
+			<tr>
+				${createTableHead('')}
+				${createTableHead('Name')}
+				${createTableHead('Size')}
+				${createTableHead('Quantity')}
+				${createTableHead('Price')}
+				${createTableHead('Total Price')}
+			</tr>
+			${generateItemRows(this.items)}
+		</table>
+		<hr/>
+		<div>
+			<div style="font-size: 14px; margin-bottom: 0.5em;"><strong style="color: #666666;">SUB-TOTAL</strong> <span style="float: right; color: #666666;">${this.totalPrice}</span></div>
+			<div style="font-size: 14px; margin-bottom: 0.5em;"><strong style="color: #666666;">TAX</strong> <span style="float: right; color: #666666;">${this.taxes}</span></div>
+			<hr/>
+			<div style="font-size: 14px; margin-bottom: 0.5em;"><strong>TOTAL</strong> <span style="float: right;">${(this.totalPrice + this.taxes).toFixed(2)}</span></div>
+		</div>
+	</div>
+	<div>
+		<p>Thank you again for choosing Graphic Groove. We appreciate your business and hope you enjoy your purchase!<br/>Best Regards,<br/>Graphic Groove</p>
+	</div>
 </div>
-<div>
-<span>${userInformation.firstName} ${userInformation.lastName}</span>
-<span>${this.shippingAddress}</span>
-</div>
-<table>
-<tr>
-<th></th>
-<th>name</th>
-<th>size</th>
-<th>quantity</th>
-<th>price</th>
-<th>totalPrice</th>
-</tr>
-${generateItemRows(this.items)}
-</table>
-<div>
-<div><span>Subtotal:</span> <strong>${this.totalPrice}</strong></div>
-<div><span>Tax:</span> <strong>${this.taxes}</strong></div>
-<div><span>Order Total:</span> <strong>${(this.totalPrice + this.taxes).toFixed(2)}</strong></div>
-</div>
-<div>
-<p>Thank you again for choosing Graphic Groove. We appreciate your business and hope you enjoy your purchase!<br/>Best Regards,<br/>Graphic Groove</p>
-</div>
-</div>
+
 `);
 	return html;
 }
