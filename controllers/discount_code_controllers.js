@@ -78,6 +78,10 @@ module.exports.getOneDiscountCode = async (req, res, next) => {
 module.exports.createDiscountCode = async (req, res, next) => {
     try {
         const {code, description, minCost, staticDiscount, percentDiscount, active} = req.body;
+        const discountCode = await DiscountCode.findOne({code});
+        if (discountCode) {
+            return res.status(400).json({field: "code", message: "Code already exists."});
+        }
         await DiscountCode.create({
             code,
             description,
