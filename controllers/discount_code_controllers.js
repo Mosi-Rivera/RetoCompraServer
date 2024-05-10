@@ -1,5 +1,6 @@
 const Discountcode = require('../models/Discountcode');
 const DiscountCode = require('../models/Discountcode');
+const {cloudinaryAddImage} = require('../utils/Imageupload');
 const { parseInputStrToInt } = require('../utils/input');
 
 module.exports.getDiscountCodes = async (req, res, next) => {
@@ -77,19 +78,32 @@ module.exports.getOneDiscountCode = async (req, res, next) => {
 
 module.exports.createDiscountCode = async (req, res, next) => {
     try {
-        const {code, description, minCost, staticDiscount, percentDiscount, active} = req.body;
-        const discountCode = await DiscountCode.findOne({code});
+        const {imageData, redirectTo, showBanner, code, description, minCost, discount, discountType, active} = req.body;
+        let discountCode = await DiscountCode.findOne({code});
         if (discountCode) {
             return res.status(400).json({field: "code", message: "Code already exists."});
         }
-        await DiscountCode.create({
+        discountCode = await DiscountCode.create({
             code,
             description,
             minCost,
-            staticDiscount,
-            percentDiscount,
+            discount,
+            discountType,
             active
         });
+
+        if (imageData) {
+            const imageUrl = await cloudinaryAddImage(imageData, "DiscountCodes", discountCode._id.toString());
+
+            discountCode.banner = {
+                imageUrl: imageUrl,
+                redirectTo,
+                show: showBanner || false
+            };
+
+            await discountCode.save()
+        }
+
         res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);
