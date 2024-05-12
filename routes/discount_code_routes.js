@@ -12,6 +12,6 @@ router.route('/').post(authenticateToken, validateRole([STAFF, ADMIN]), createDi
 
 router.route('/:code').patch(authenticateToken, validateRole([STAFF, ADMIN]), updateDiscountCode);
 
-router.route('/:code').delete(authenticateToken, validateRole([STAFF, ADMIN]), deleteDiscountcode);
+router.route('/:id').delete(authenticateToken, validateRole([STAFF, ADMIN]), deleteDiscountcode);
 
 module.exports = router;

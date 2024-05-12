@@ -1,6 +1,6 @@
 const obj = {
-    PERCENT: 0,
-    TOTAL: 1
+    TOTAL: 0,
+    PERCENT: 1
 };
 const arr = Object.values(obj);
 module.exports.obj = obj;

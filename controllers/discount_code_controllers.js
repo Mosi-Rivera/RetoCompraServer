@@ -113,8 +113,22 @@ module.exports.createDiscountCode = async (req, res, next) => {
 module.exports.updateDiscountCode = async (req, res, next) => {
     try {
         const {code} = req.params;
-        await DiscountCode.findOneAndUpdate({code}, req.body);
-        req.sendStatus(200);
+        const {imageData, redirectTo, show} = req.body;
+        delete req.body.banner;
+
+        const discountCode = await DiscountCode.findOneAndUpdate({code}, req.body);
+        if (imageData) {
+            const imageUrl = await cloudinaryAddImage(imageData, "DiscountCodes", discountCode._id.toString());
+
+            discountCode.banner = {
+                imageUrl: imageUrl,
+                redirectTo,
+                show: showBanner || false
+            };
+
+            await discountCode.save()
+        }
+        res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -122,9 +136,9 @@ module.exports.updateDiscountCode = async (req, res, next) => {
 
 module.exports.deleteDiscountcode = async (req, res, next) => {
     try {
-        const {code} = req.params;
-        await DiscountCode.deleteOne({code});
-        req.sendStatus(200);
+        const {id} = req.params;
+        await DiscountCode.deleteOne({_id: id});
+        res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500) && next(error);
     }

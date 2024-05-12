@@ -9,16 +9,15 @@ const DiscountCodeSchema = new Schema({
 	discount: {type: Number, default: 0},
 	discountType: {type: Number, default: 0, enum: discount_type_arr, default: TOTAL},
 	active: {type: Boolean, default: false},
+	text: {type: String, default: function() {
+		return `Use code "${this.code}" for ${this.discountType == PERCENT ? '$' + this.discount : this.discount + "%"} off` + (this.minCost > 0 ? ` orders over $${this.minCost}.` : '.');
+	}},
 	banner: {
 		type: {
 			_id: false,
 			show: {type: Boolean},
 			redirectTo: {type: String},
 			imageUrl: {type: String},
-			text: {type: String, default: function() {
-				const parent = this.parent();
-				return `Use code "${parent.code}" for ${parent.discountType == PERCENT ? '$' + parent.discount : parent.discount + "%"} off` + (parent.minCost > 0 ? ` orders over $${parent.minCost}.` : '.');
-			}}
 		},
 		required: false
 	}
