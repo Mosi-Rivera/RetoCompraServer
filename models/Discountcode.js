@@ -15,7 +15,7 @@ const DiscountCodeSchema = new Schema({
 	banner: {
 		type: {
 			_id: false,
-			show: {type: Boolean},
+			// show: {type: Boolean},
 			redirectTo: {type: String},
 			imageUrl: {type: String},
 		},

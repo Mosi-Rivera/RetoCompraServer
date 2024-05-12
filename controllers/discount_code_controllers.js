@@ -70,7 +70,7 @@ module.exports.getDiscountCodes = async (req, res, next) => {
 module.exports.getOneDiscountCode = async (req, res, next) => {
     try {
         const code = req.params.code;
-        res.status(200).json(await DiscountCode.find({code: code}));
+        res.status(200).json(await DiscountCode.findOne({code}));
     } catch (error) {
         res.sendStatus(500) && next(error);
     }
@@ -113,10 +113,10 @@ module.exports.createDiscountCode = async (req, res, next) => {
 module.exports.updateDiscountCode = async (req, res, next) => {
     try {
         const {code} = req.params;
-        const {imageData, redirectTo, show} = req.body;
+        const {imageData, redirectTo, show} = req.body.banner;
         delete req.body.banner;
 
-        const discountCode = await DiscountCode.findOneAndUpdate({code}, req.body);
+        const discountCode = await DiscountCode.findOneAndUpdate({code}, req.body, {new: true});
         if (imageData) {
             const imageUrl = await cloudinaryAddImage(imageData, "DiscountCodes", discountCode._id.toString());
 
