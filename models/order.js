@@ -3,6 +3,7 @@ const sizes = require('../constants/size');
 const Variant = require('./Variant');
 const User = require('../models/user');
 const { wrapWithEmailHTML } = require('../utils/emailHTML');
+const {PERCENT, TOTAL} = require("../constants/discount_types").obj;
 const {arr: status_arr, obj:{PENDING}} = require('../constants/delivery_status');
 
 const orderSchema = new mongoose.Schema(
@@ -17,6 +18,10 @@ const orderSchema = new mongoose.Schema(
 			price: { type: Number, required: true }
 		}],
 		taxes: { type: Number, required: true },
+		discount: {
+			discountType: Number,
+			discount: Number
+		},
 		totalPrice: { type: Number, required: true },
 		shippingAddress: { type: String, required: true },
 		status: { type: String, enum: status_arr, default: PENDING }
@@ -25,7 +30,7 @@ const orderSchema = new mongoose.Schema(
 }
 );
 
-orderSchema.statics.handleOrderTransaction = async function (email, addressString) {
+orderSchema.statics.handleOrderTransaction = async function (email, addressString, discount = 0, discountType = TOTAL, discountMinCost = 0) {
 	try {
 		var session = await mongoose.startSession();
 		session.startTransaction();
@@ -61,10 +66,18 @@ orderSchema.statics.handleOrderTransaction = async function (email, addressStrin
 			}
 		}
 
+		if (totalPrice > discountMinCost) {
+			totalPrice = discountType === TOTAL ? totalPrice - discount : totalPrice * discount / 100;
+		}
+
 		const newOrder = new this({
 			user: user._id,
 			items,
 			taxes: (totalPrice * 0.115).toFixed(2),
+			discount: {
+				discountType,
+				discount
+			},
 			totalPrice: (totalPrice).toFixed(2),
 			shippingAddress: addressString
 		});

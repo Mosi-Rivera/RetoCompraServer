@@ -9,6 +9,7 @@ const productRoutes = require('./routes/product_routes');
 const cartRoutes = require('./routes/cart_routes');
 const orderRoutes = require('./routes/order_routes');
 const changelogRoutes = require('./routes/change_logs_routes');
+const discountCodeRoutes = require('./routes/discount_code_routes');
 const usersRoutes = require('./routes/user_routes');
 const cors = require('cors');
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api/changelogs', changelogRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/discount_codes', discountCodeRoutes);
 
 app.use('*', (req, res, next) => {
     res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl + '\nmethod: ' + req.method));
