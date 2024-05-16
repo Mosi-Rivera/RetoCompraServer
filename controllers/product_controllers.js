@@ -222,7 +222,9 @@ module.exports.getAllVariants = async (req, res, next) => {
         sort = sort || {createdAt: -1};
         if (variantQuery.sku && mongoose.Types.ObjectId.isValid(variantQuery.sku)) {
             variantQuery.$or = [{
-                _id: new mongoose.Types.ObjectId(variantQuery.sku)
+                _id: new mongoose.Types.ObjectId(variantQuery.sku),
+            },{
+                product: new mongoose.Types.ObjectId(variantQuery.sku)
             }];
         }
         delete variantQuery.sku;
