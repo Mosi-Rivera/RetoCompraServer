@@ -116,7 +116,7 @@ module.exports.getProducts = async (req, res, next) => {
 module.exports.searchProducts = async (req, res, next) => {
     try {
         const productQuery = Product.parseQuery(req.query);
-        const search = req.params.search || "";
+        let search = req.params.search || "";
         const regex = { $regex: new RegExp(`.*${search.replace(/\s+/g, ".*")}.*`, 'i') };
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
 
@@ -271,6 +271,7 @@ module.exports.searchAllProducts = async (req, res ,next) => {
             {name: regex},
             {description: regex},
             {brand: regex},
+            {section: regex},
         ];
         if (mongoose.Types.ObjectId.isValid(search)) {
             orQuery.push({_id: new mongoose.Types.ObjectId(search)});
