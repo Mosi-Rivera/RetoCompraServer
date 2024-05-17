@@ -18,10 +18,7 @@ const orderSchema = new mongoose.Schema(
 			price: { type: Number, required: true }
 		}],
 		taxes: { type: Number, required: true },
-		discount: {
-			discountType: Number,
-			discount: Number
-		},
+		discount: Number,
 		totalPrice: { type: Number, required: true },
 		shippingAddress: { type: String, required: true },
 		status: { type: String, enum: status_arr, default: PENDING }
@@ -67,20 +64,20 @@ orderSchema.statics.handleOrderTransaction = async function (email, addressStrin
 		}
 
 		if (totalPrice > discountMinCost) {
-			totalPrice = discountType === TOTAL ? totalPrice - discount : totalPrice * discount / 100;
+			var totalDiscount = discountType == TOTAL ? discount : totalPrice * discount / 100;
+			totalPrice = Math.max(totalPrice - totalDiscount, 0);
 		}
 
 		const newOrder = new this({
 			user: user._id,
 			items,
 			taxes: (totalPrice * 0.115).toFixed(2),
-			discount: {
-				discountType,
-				discount
-			},
 			totalPrice: (totalPrice).toFixed(2),
 			shippingAddress: addressString
 		});
+		if (totalDiscount) {
+			newOrder.discount = totalDiscount;
+		}
 		const order = await newOrder.save();
 
 		user = await User.findOneAndUpdate({ email }, { $set: { cart: [] } }, { new: true }).session(session);
@@ -146,8 +143,15 @@ orderSchema.methods.toHTMLOrderConfirmation = function (userInformation) {
 		</table>
 		<hr/>
 		<div>
-			<div style="font-size: 14px; margin-bottom: 0.5em;"><strong style="color: #666666;">SUB-TOTAL</strong> <span style="float: right; color: #666666;">${this.totalPrice}</span></div>
-			<div style="font-size: 14px; margin-bottom: 0.5em;"><strong style="color: #666666;">TAX</strong> <span style="float: right; color: #666666;">${this.taxes}</span></div>
+			<div style="font-size: 14px; margin-bottom: 0.5em;">
+				<strong style="color: #666666;">SUB-TOTAL</strong> <span style="float: right; color: #666666;">${this.totalPrice}</span>
+			</div>
+			${this.discount ? `<div style="font-size: 14px; margin-bottom: 0.5em;">
+				<strong style="color: #666666;">DISCOUNT</strong> <span style="float: right; color: #666666;">${ this.discount.discount }</span>
+			</div>` : ""}
+			<div style="font-size: 14px; margin-bottom: 0.5em;">
+				<strong style="color: #666666;">TAX</strong> <span style="float: right; color: #666666;">${this.taxes}</span>
+			</div>
 			<hr/>
 			<div style="font-size: 14px; margin-bottom: 0.5em;"><strong>TOTAL</strong> <span style="float: right;">${(this.totalPrice + this.taxes).toFixed(2)}</span></div>
 		</div>
