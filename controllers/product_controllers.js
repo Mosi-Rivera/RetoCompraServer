@@ -384,12 +384,12 @@ module.exports.updateCrudVariant = async (req, res, next) => {
         const { xsStock, sStock, mStock, lStock, xlStock, color, price, imageData } = req.body;
 
 
-        const updateObject = { $inc: {}, $set: {} }
-        if (xsStock) updateObject.$inc["stock.XS.stock"] = xsStock;
-        if (sStock) updateObject.$inc["stock.S.stock"] = sStock;
-        if (mStock) updateObject.$inc["stock.M.stock"] = mStock;
-        if (lStock) updateObject.$inc["stock.L.stock"] = lStock;
-        if (xlStock) updateObject.$inc["stock.XL.stock"] = xlStock;
+        const updateObject = { $set: {} }
+        if (xsStock) updateObject.$set["stock.XS.stock"] = xsStock;
+        if (sStock) updateObject.$set["stock.S.stock"] = sStock;
+        if (mStock) updateObject.$set["stock.M.stock"] = mStock;
+        if (lStock) updateObject.$set["stock.L.stock"] = lStock;
+        if (xlStock) updateObject.$set["stock.XL.stock"] = xlStock;
         if (color) updateObject.$set["color"] = color;
         if (price) updateObject.$set["price.value"] = price;
 
