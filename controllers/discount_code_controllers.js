@@ -98,7 +98,7 @@ module.exports.isValidDiscount = async (req, res, next) => {
 
 module.exports.getDiscountBanners = async (req, res, next) => {
     try {
-        const banners = await DiscountCode.find({active: true, imageUrl: {$exists: true}}, {description: 1, code: 1, imageUrl: 1});
+        const banners = await DiscountCode.find({active: true, imageUrl: {$exists: true}}, {redirectTo: 1, description: 1, code: 1, imageUrl: 1});
         res.status(202).json(banners);
     } catch (error) {
         res.sendStatus(500) && next(error);
