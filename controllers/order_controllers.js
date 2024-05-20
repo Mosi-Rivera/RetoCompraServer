@@ -106,7 +106,8 @@ module.exports.checkoutController = async (req, res, next) => {
         if (!streetAddress || !state || !city || !zipCode) {
             return res.status(403).json({ field: 'server', error: 'Please fill all required fields.' }) && next(new Error('Missing address fields.'));
         }
-        const discount = await DiscountCode.findOne({code: discountCode}, {discount: 1, discountType: 1, minCost: 1, _id: 0});
+        const discount = await DiscountCode.findOne({code: discountCode, active: true}, {discount: 1, discountType: 1, minCost: 1, _id: 0});
+        console.log(discountCode, discount);
 
         const addressString = `${streetAddress} ${optionalAddress} ${state} ${city} ${zipCode}`;
         const [order, user] = await Order.handleOrderTransaction(
