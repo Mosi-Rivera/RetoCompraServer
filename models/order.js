@@ -76,9 +76,10 @@ orderSchema.statics.handleOrderTransaction = async function (email, addressStrin
 			shippingAddress: addressString
 		});
 		if (totalDiscount) {
-			newOrder.discount = totalDiscount;
+			newOrder.discount = totalDiscount.toFixed(2);
 		}
 		const order = await newOrder.save();
+		console.log(order);
 
 		user = await User.findOneAndUpdate({ email }, { $set: { cart: [] } }, { new: true }).session(session);
 
@@ -147,7 +148,7 @@ orderSchema.methods.toHTMLOrderConfirmation = function (userInformation) {
 				<strong style="color: #666666;">SUB-TOTAL</strong> <span style="float: right; color: #666666;">${this.totalPrice}</span>
 			</div>
 			${this.discount ? `<div style="font-size: 14px; margin-bottom: 0.5em;">
-				<strong style="color: #666666;">DISCOUNT</strong> <span style="float: right; color: #666666;">${ this.discount.discount }</span>
+				<strong style="color: #666666;">DISCOUNT</strong> <span style="float: right; color: #666666;">${ this.discount }</span>
 			</div>` : ""}
 			<div style="font-size: 14px; margin-bottom: 0.5em;">
 				<strong style="color: #666666;">TAX</strong> <span style="float: right; color: #666666;">${this.taxes}</span>
