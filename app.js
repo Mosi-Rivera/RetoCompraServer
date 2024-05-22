@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require("path");
 const express = require('express');;
 const mongoose = require('mongoose');
 const BodyParser = require('body-parser');
@@ -21,9 +22,11 @@ if (!process.env.NODE_ENV) app.use(cors({
 mongoose.connect(process.env.DB_URI || 'mongodb://localhost:27017/clothingStore');
 
 app.use(BodyParser.urlencoded({ extended: false }));
-app.use(BodyParser.json({limit: "25mb"}));
+app.use(BodyParser.json({ limit: "25mb" }));
 app.use(cookieParser());
 app.use(ExpressMongoSanitize());
+
+app.use(express.static(path.join(__dirname, "./build/dist")));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -33,8 +36,8 @@ app.use('/api/changelogs', changelogRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/discount_codes', discountCodeRoutes);
 
-app.use('*', (req, res, next) => {
-    res.sendStatus(404) && next(new Error('Route not found.\n' + req.protocol + '://' + req.get('host') + req.originalUrl + '\nmethod: ' + req.method));
+app.use('*', (_, res) => {
+    res.sendFile(path.join(__dirname, "./", "index.html"));
 });
 
 const port = 4800
