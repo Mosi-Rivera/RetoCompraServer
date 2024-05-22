@@ -1,7 +1,7 @@
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
 const ChangeLog = require('../models/change_log');
-const {cloudinaryAddImage, cloudinaryDeleteImage, cloudinaryDeleteManyImages} = require('../utils/Imageupload');
+const {cloudinaryAddImage, cloudinaryDeleteImage, cloudinaryDeleteManyImages, cloudinaryDeleteFolder} = require('../utils/Imageupload');
 const mongoose = require("mongoose");
 const User = require("../models/user");
 const { parseInputStrToInt } = require("../utils/input");
@@ -483,6 +483,7 @@ module.exports.addCrudVariant = async (req, res, next) => {
 
         res.status(200).json(variant);
     } catch (error) {
+        console.log(error);
         res.sendStatus(500) && next(error);
     }
 }
