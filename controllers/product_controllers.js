@@ -1,7 +1,7 @@
 const Variant = require("../models/Variant");
 const Product = require("../models/Product");
 const ChangeLog = require('../models/change_log');
-const {cloudinaryAddImage, cloudinaryDeleteImage, cloudinaryDeleteManyImages} = require('../utils/Imageupload');
+const {cloudinaryAddImage, cloudinaryDeleteImage, cloudinaryDeleteManyImages, cloudinaryDeleteFolder} = require('../utils/Imageupload');
 const mongoose = require("mongoose");
 const User = require("../models/user");
 const { parseInputStrToInt } = require("../utils/input");
@@ -116,7 +116,7 @@ module.exports.getProducts = async (req, res, next) => {
 module.exports.searchProducts = async (req, res, next) => {
     try {
         const productQuery = Product.parseQuery(req.query);
-        const search = req.params.search || "";
+        let search = req.params.search || "";
         const regex = { $regex: new RegExp(`.*${search.replace(/\s+/g, ".*")}.*`, 'i') };
         const [query, skip, limit, sort] = Variant.parseQuery(req.query);
 
@@ -222,7 +222,9 @@ module.exports.getAllVariants = async (req, res, next) => {
         sort = sort || {createdAt: -1};
         if (variantQuery.sku && mongoose.Types.ObjectId.isValid(variantQuery.sku)) {
             variantQuery.$or = [{
-                _id: new mongoose.Types.ObjectId(variantQuery.sku)
+                _id: new mongoose.Types.ObjectId(variantQuery.sku),
+            },{
+                product: new mongoose.Types.ObjectId(variantQuery.sku)
             }];
         }
         delete variantQuery.sku;
@@ -271,6 +273,7 @@ module.exports.searchAllProducts = async (req, res ,next) => {
             {name: regex},
             {description: regex},
             {brand: regex},
+            {section: regex},
         ];
         if (mongoose.Types.ObjectId.isValid(search)) {
             orQuery.push({_id: new mongoose.Types.ObjectId(search)});
@@ -381,12 +384,12 @@ module.exports.updateCrudVariant = async (req, res, next) => {
         const { xsStock, sStock, mStock, lStock, xlStock, color, price, imageData } = req.body;
 
 
-        const updateObject = { $inc: {}, $set: {} }
-        if (xsStock) updateObject.$inc["stock.XS.stock"] = xsStock;
-        if (sStock) updateObject.$inc["stock.S.stock"] = sStock;
-        if (mStock) updateObject.$inc["stock.M.stock"] = mStock;
-        if (lStock) updateObject.$inc["stock.L.stock"] = lStock;
-        if (xlStock) updateObject.$inc["stock.XL.stock"] = xlStock;
+        const updateObject = { $set: {} }
+        if (xsStock) updateObject.$set["stock.XS.stock"] = xsStock;
+        if (sStock) updateObject.$set["stock.S.stock"] = sStock;
+        if (mStock) updateObject.$set["stock.M.stock"] = mStock;
+        if (lStock) updateObject.$set["stock.L.stock"] = lStock;
+        if (xlStock) updateObject.$set["stock.XL.stock"] = xlStock;
         if (color) updateObject.$set["color"] = color;
         if (price) updateObject.$set["price.value"] = price;
 
@@ -480,6 +483,7 @@ module.exports.addCrudVariant = async (req, res, next) => {
 
         res.status(200).json(variant);
     } catch (error) {
+        console.log(error);
         res.sendStatus(500) && next(error);
     }
 }
