@@ -5,5 +5,5 @@ const obj = {
     HIGH: 'high'
 };
 const arr = Object.values(obj);
-const sort_constants = {obj, arr};
-module.exports = sort_constants;
+module.exports.obj = obj;
+module.exports.arr = arr;

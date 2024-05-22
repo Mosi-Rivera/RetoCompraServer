@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
-const sections_constants = require('../constants/SECTIONS');
-const {NEW, POPULAR, LOW, HIGH} = require('../constants/SORT').obj;
+const sectionsConstants = require('../constants/section');
+const Variant = require('./Variant');
 const ProductSchema = new mongoose.Schema({
 	name: {type: String, required: true},
 	description: {type: String, required: true},
-	sections: {
-		type: [
-			{type: String, enum: sections_constants.arr}
-		], 
-		default: [sections_constants.obj.MEN]
+	section: {
+		type: String,
+		enum: sectionsConstants.arr,
+		default: sectionsConstants.obj.MEN
 	},
 	brand: {type: String, required: true}
 },
@@ -18,25 +17,29 @@ const ProductSchema = new mongoose.Schema({
 
 ProductSchema.statics.parseQuery = function(query)
 {
-	let limit = query.limit;
-	let page = query.page;
-	let sort = query.sort;
-	delete query.limit;
-	delete query.page;
-	delete query.sort;
-	limit = parseInt(limit);
-	limit = isNaN(limit) ? 50 : limit;
-	page = parseInt(page);
-	page = isNaN(page) ? 1 : Math.max(1, page);
-	switch (sort)
-	{
-		case NEW: sort = {createdAt: -1}; break;
-		case POPULAR: sort = {popularity_index: -1}; break;
-		case LOW: sort = {price: 1}; break;
-		case HIGH: sort = {price: -1}; break;
-		default: sort = null;
-	}
-	return [query, (page - 1) * limit, limit, sort];
+	const result = {};
+	if (query.name) 
+		result.name = query.name;
+	if (query.section) 
+		result.section = query.section;
+	if (query.brand) 
+		result.brand = query.brand;
+	delete query.name;
+	delete query.brand;
+	delete query.section;
+	delete query.description;
+	return (result);
 }
 
+ProductSchema.pre('remove', async(next) =>
+{ try { 
+	await Variant.deleteMany ({ product: this._id});
+	next();
+} catch (eror) {
+	next(eror);
+}
+})  
+
 module.exports = mongoose.model('Product', ProductSchema);
+
+//pending delete method (logical removal); product ID to be diable or hidden but not actually deleted

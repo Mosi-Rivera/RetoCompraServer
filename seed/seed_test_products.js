@@ -1,23 +1,25 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const ChangeLog = require('../models/change_log');
 const Product = require('../models/Product');
 const Variant = require('../models/Variant');
-const {USD} = require('../constants/CURRENCIES').obj;
-const sections = require('../constants/SECTIONS').arr;
-const sizes = require('../constants/SIZES').arr;
+const User = require('../models/user');
+const {USD} = require('../constants/currency').obj;
+const sections = require('../constants/section').arr;
+const sizes = require('../constants/size').arr;
 const brands = ["NIKE", "H&M", "GC", "ADIDAS"];
-const colors = ["RED", "BLUE", "YELLOW", "GREEN", "PURPLE", "PINK", "BROWN", "BLACK", "WHITE", "MULTI"];
-const images = [
-    'https://cdn.pixabay.com/photo/2016/12/06/09/31/blank-1886008_640.png',//red
-    'https://cdn.pixabay.com/photo/2017/02/15/11/42/t-shirt-2068353_640.png',//blue
-    'https://media.istockphoto.com/id/831591150/photo/yellow-t-shirts-front-and-back-used-as-design-template.jpg?b=1&s=170667a&w=0&k=20&c=4Wm0BXRriJONblmVKGx5aTiJLeJy0oS-f22zB6zL8us=',//yellow
-    'https://cdn.pixabay.com/photo/2016/11/23/06/57/isolated-t-shirt-1852114_640.png',//green
-    'https://media.istockphoto.com/id/1354823135/photo/violet-t-shirt-template-men-isolated-on-white-tee-shirt-blank-as-design-mockup-front-view.jpg?s=1024x1024&w=is&k=20&c=42T1swRTZxbYZJTXgB5Sd_BH3acg88Xg3Ws4zHB3UHw=', //purple
-    'https://cdn.pixabay.com/photo/2017/10/22/19/10/shirt-2878907_960_720.jpg',//pink
-    'https://media.istockphoto.com/id/1295521820/photo/mens-brown-dark-chocolate-blank-t-shirt-template-from-two-sides-natural-shape-on-invisible.jpg?s=1024x1024&w=is&k=20&c=rNSJ1PE_vUadGU7ObCJn2fTp9UNmh2aRumGjnl-p_WU=',//brown
-    'https://cdn.pixabay.com/photo/2016/12/06/09/30/blank-1886001_640.png',//black
-    'https://cdn.pixabay.com/photo/2016/12/06/09/31/blank-1886013_640.png', //white
-    'https://media.istockphoto.com/id/859807234/photo/tie-dye-shirt.jpg?s=1024x1024&w=is&k=20&c=uvY2j0OLFOPSzAh2WhBnsBdr-aMg1oAbZ8-0oCkmBOo=',//multi
+const colors = ["RED", "BLUE", "YELLOW", "GREEN"];
+const maleImages = [
+    'https://imgs.search.brave.com/mbYwiUtddz9mHn6BNwsRIGbjRtuJPB8-3N8TP2ii_30/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/ODFSUlo2NkF1dUwu/anBn',//red
+    'https://imgs.search.brave.com/WDl---3CdkdvFbglUAGaf7H0YY2UD9TrjMcpvswdqkc/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/ODFhKzBQRXNIQ0wu/anBn',//blue
+    'https://imgs.search.brave.com/VT_kq4KEtQOzVyv9pq6lM1qHuXVNGrxTJdcmYWEXycQ/rs:fit:500:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NzFmeG5lV2wrRUwu/anBn',//yellow
+    'https://imgs.search.brave.com/wb6ZXs93SiHADN1QRi6-wDqBZwEBJo5wzZSnLbCKXIc/rs:fit:500:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NjE5emN2SzFwZFMu/anBn'//green
+];
+const femaleImages = [
+    'https://imgs.search.brave.com/nQXKCq67jLP2qYbZuk5XtQNuuqs8cmoyPq_djQmbB9A/rs:fit:500:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/ODFQd3VJbFdCK0wu/anBn',//red
+    'https://imgs.search.brave.com/8sUSR4hTXQVFLFjbc1GUG7GN6IhNskUUt8qaVYjZ99M/rs:fit:500:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NTEwdHpFcTdpd0wu/anBn',//blue
+    'https://imgs.search.brave.com/HMyI7mXg6ET4WX1VZMPmaICewYTrt4myCpF9TA8fQ0M/rs:fit:500:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NjE2RmtRU0h3dEwu/anBn',//yellow
+    'https://imgs.search.brave.com/xYNBsXj7a4Y1LJc9NtrMy8TN_g5Na17b_CSyOndAM6s/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NjFTNnpHUlpKeUwu/anBn',//green
 ];
 
 const atoi = (str, def = 10) => {
@@ -28,7 +30,13 @@ const atoi = (str, def = 10) => {
 (async () => {
     try
     {
-        mongoose.connect(process.env.DB_URI);
+        await mongoose.connect(process.env.DB_URI);
+
+        const admin = await User.findOne({role: 'admin'});
+        if (!admin) {
+            return console.log("Err: No admin user found.\n\tPlease create one and try again.");
+        }
+
         if (await Product.estimatedDocumentCount() !== 0 || await Variant.estimatedDocumentCount() !== 0)
         {
             return console.log(`Err: Collection is not empty!
@@ -38,42 +46,55 @@ const atoi = (str, def = 10) => {
         }
         const products = [];
         const variants = [];
-        let product_count = atoi(process.argv[2]);
-        let variant_count = atoi(process.argv[3]);
-        for (let i = product_count; i--;)
+        let changeLogs = [];
+        let productCount = atoi(process.argv[2], 10);
+        let variantCount = atoi(process.argv[3], 5);
+        for (let i = productCount; i--;)
             products.push({
                 name: "Product name: " + i,
                 description: 'This is a description for product: ' + i,
-                sections: [sections[i % sections.length]],
+                section: sections[i % sections.length],
                 brand: brands[i % brands.length]
             });
-        const product_ids = (await Product.insertMany(products)).map(doc => doc._id);
-        for (let i = product_ids.length; i--;)
+        const productDocuments = await Product.insertMany(products);
+        productDocuments.forEach(product => changeLogs.push(ChangeLog.productCreate(admin, product)));
+        await Promise.all(changeLogs);
+        for (let i = productDocuments.length; i--;)
         {
-            const color_size_map = new Map();
-            for (let j = variant_count; j--;)
+            const {_id, name, brand, section} = productDocuments[i];
+            for (let j = variantCount; j--;)
             {
-                const color_index = j % colors.length;
-                const color = colors[color_index];
-                const img = images[color_index];
+                const colorIndex = j % colors.length;
+                const color = colors[colorIndex];
+                const img = (section == 'men' ? maleImages : femaleImages)[colorIndex];
                 const price = Math.floor((5 + Math.random() * 40) * 100) / 100;
-                const size = sizes[j % sizes.length];
-                const quantity = Math.floor(Math.random() * 30 + 1)
-                if (color_size_map.has(color))
-                {
-                    const size_log = color_size_map.get(color);
-                    if (size_log.includes(size))
-                        continue;
-                    else
-                    {
-                        size_log.push(size);
-                        color_size_map.set(color, size_log);
-                    }
-                }
-                else
-                    color_size_map.set(color, [size]);
+                const stock = {
+                    XS: {
+                        size: "XS",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                    S: {
+                        size: "S",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                    M: {
+                        size: "M",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                    L: {
+                        size: "L",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                    XL: {
+                        size: "XL",
+                        stock: Math.floor(Math.random() * 30)
+                    },
+                };
                 variants.push({
-                    product: product_ids[i],
+                    product: _id,
+                    name,
+                    brand,
+                    section,
                     color,
                     assets: {
                         thumbnail: img,
@@ -83,12 +104,14 @@ const atoi = (str, def = 10) => {
                         currency: USD,
                         value: price
                     },
-                    size,
-                    quantity
+                    stock: stock
                 });
             }
         }
-        await Variant.insertMany(variants);
+        changeLogs = [];
+        (await Variant.insertMany(variants))
+            .forEach(variant => changeLogs.push(ChangeLog.variantCreate(admin, variant)));
+        await Promise.all(changeLogs);
         console.log('PRODUCTS SEEDED!');
     }
     catch(err)
