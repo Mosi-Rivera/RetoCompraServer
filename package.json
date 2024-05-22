@@ -21,7 +21,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon ./app.js",
-    "nvim": "find ./ -type f -name \"*.js\" ! -path \"*/node_modules/*\" -exec nvim {} +"
+    "nvim": "find ./ -type f -name \"*.js\" ! -path \"*/node_modules/*\" -exec nvim {} +",
+    "start": "npm i && node app.js"
   },
   "keywords": [],
   "author": "",
