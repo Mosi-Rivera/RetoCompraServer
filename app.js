@@ -37,10 +37,15 @@ app.use('/api/users', usersRoutes);
 app.use('/api/discount_codes', discountCodeRoutes);
 
 app.use('*', (_, res) => {
-    res.sendFile(path.join(__dirname, "./", "index.html"));
+    console.log(path.join(__dirname, "index.html"));
+    res.sendFile(path.join(__dirname, "./build/dist/index.html"));
 });
 
 const port = process.env.PORT || 4800
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+app.listen(port, (error) => {
+    if (error) {
+        console.log(error);
+    } else {
+        console.log(`Server is running on http://localhost:${port}`);
+    }
 });
